@@ -1,0 +1,2127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CYBER-DETECT: Simulador Avançado de Phishing</title>
+  <style>
+    /* ==========================================================================
+       1. VARIÁVEIS CSS E ESTILOS GLOBAIS (DESIGN HUD CYBERPUNK)
+       ========================================================================== */
+    :root {
+      --bg-dark: #0a0e17;
+      --bg-card: #0d1b2a;
+      --bg-card-alt: #1b263b;
+      --accent-blue: #00f0ff;
+      --accent-green: #00ff66;
+      --accent-red: #ff3333;
+      --accent-yellow: #ffcc00;
+      --text-main: #e0e1dd;
+      --text-muted: #778da9;
+      --border-color: #415a77;
+      --font-mono: 'Consolas', 'Courier New', Courier, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.05) 0%, transparent 80%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 30px 30px, 30px 30px;
+    }
+
+    /* Efeito Scanline CRT */
+    body::before {
+      content: " ";
+      display: block;
+      position: fixed;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      z-index: 999;
+      pointer-events: none;
+      opacity: 0.4;
+    }
+
+    #app-container {
+      width: 95%;
+      max-width: 960px;
+      min-height: 720px;
+      margin: 20px auto;
+      background-color: rgba(13, 27, 42, 0.95);
+      border: 2px solid var(--accent-blue);
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.2), inset 0 0 15px rgba(0, 240, 255, 0.1);
+      clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Utilitários Visuais */
+    .hud-title {
+      font-size: 1.35rem;
+      color: var(--accent-blue);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-shadow: 0 0 8px var(--accent-blue);
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .hud-btn {
+      background: transparent;
+      color: var(--accent-blue);
+      border: 1px solid var(--accent-blue);
+      padding: 12px 20px;
+      font-family: var(--font-mono);
+      font-weight: bold;
+      font-size: 0.9rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s ease;
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .hud-btn:hover {
+      background: var(--accent-blue);
+      color: var(--bg-dark);
+      box-shadow: 0 0 15px var(--accent-blue);
+      transform: translateY(-2px);
+    }
+
+    .hud-btn-danger {
+      color: var(--accent-red);
+      border-color: var(--accent-red);
+    }
+    .hud-btn-danger:hover {
+      background: var(--accent-red);
+      color: #fff;
+      box-shadow: 0 0 15px var(--accent-red);
+    }
+
+    .hud-btn-success {
+      color: var(--accent-green);
+      border-color: var(--accent-green);
+    }
+    .hud-btn-success:hover {
+      background: var(--accent-green);
+      color: var(--bg-dark);
+      box-shadow: 0 0 15px var(--accent-green);
+    }
+
+    .hud-btn-warning {
+      color: var(--accent-yellow);
+      border-color: var(--accent-yellow);
+    }
+    .hud-btn-warning:hover {
+      background: var(--accent-yellow);
+      color: var(--bg-dark);
+      box-shadow: 0 0 15px var(--accent-yellow);
+    }
+
+    .icon {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    .screen {
+      display: none;
+      padding: 25px;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    /* ==========================================================================
+       2. PAINEL SUPERIOR DE STATUS (HUD HEADER)
+       ========================================================================== */
+    #hud-header {
+      background: rgba(10, 15, 29, 0.98);
+      border-bottom: 2px solid var(--border-color);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .hud-metric {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hud-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .hud-value {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: var(--accent-blue);
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 6px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      margin-top: 5px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent-blue);
+      box-shadow: 0 0 8px var(--accent-blue);
+      transition: width 0.3s ease;
+    }
+
+    /* ==========================================================================
+       3. TELA INICIAL
+       ========================================================================== */
+    #screen-intro {
+      text-align: center;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .intro-box {
+      background: rgba(27, 38, 59, 0.6);
+      border: 1px solid var(--border-color);
+      padding: 20px;
+      max-width: 720px;
+      text-align: left;
+      line-height: 1.6;
+      font-size: 0.9rem;
+    }
+
+    .intro-box h3 {
+      color: var(--accent-blue);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1rem;
+    }
+
+    .difficulty-selector {
+      display: flex;
+      gap: 12px;
+      margin: 10px 0;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .diff-card {
+      background: var(--bg-card-alt);
+      border: 1px solid var(--border-color);
+      padding: 12px 18px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .diff-card:hover, .diff-card.selected {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+      background: rgba(0, 240, 255, 0.1);
+    }
+
+    .diff-card.selected h4 {
+      color: var(--accent-blue);
+    }
+
+    /* ==========================================================================
+       4. MOLDURAS DOS APLICATIVOS SIMULADOS
+       ========================================================================== */
+    #app-frame-container {
+      flex: 1;
+      background: #000;
+      border: 1px solid var(--border-color);
+      margin: 12px 0;
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      min-height: 310px;
+    }
+
+    /* WhatsApp Simulado — aparência própria do aplicativo */
+    .frame-whatsapp {
+      background: #0b141a;
+      color: #e9edef;
+      min-height: 430px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      font-family: Arial, Helvetica, sans-serif;
+      border-radius: 7px;
+      overflow: hidden;
+    }
+    .wa-appbar {
+      min-height: 25px;
+      padding: 5px 13px;
+      background: #075e54;
+      color: #e9edef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: .68rem;
+    }
+    .wa-header {
+      background: #202c33;
+      padding: 10px 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid #2a3942;
+    }
+    .wa-back { font-size: 1.35rem; color: #d1d7db; line-height: 1; }
+    .wa-avatar, .contact-avatar-img {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #344955;
+      border: 1px solid rgba(255,255,255,.22);
+      display: block;
+    }
+    .sms-contact-line { display:flex; align-items:center; justify-content:center; gap:9px; }
+    .sms-contact-line .contact-avatar-img { width:34px; height:34px; }
+    .email-sender-wrap { display:flex; align-items:center; gap:9px; margin-top:8px; }
+    .email-sender-wrap .contact-avatar-img { width:36px; height:36px; }
+    .thread-choice-panel { padding:10px 12px; background:#17232b; border-top:1px solid #2a3942; }
+    .thread-choice-title { color:#b7c4cc; font-size:.72rem; margin-bottom:8px; }
+    .thread-choice-buttons { display:flex; flex-wrap:wrap; gap:7px; }
+    .thread-choice-btn { border:1px solid #52636d; background:#263640; color:#e9edef; border-radius:16px; padding:8px 11px; font-size:.76rem; cursor:pointer; text-align:left; }
+    .thread-choice-btn:hover { background:#314954; border-color:#00a884; }
+    .thread-choice-btn:disabled { opacity:.55; cursor:default; }
+    .thread-system-note { align-self:center; color:#b7c4cc; background:#182229; border-radius:8px; padding:6px 10px; font-size:.7rem; text-align:center; max-width:95%; }
+    .wa-body {
+      padding: 16px 12px;
+      flex: 1;
+      min-height: 230px;
+      background-color: #0b141a;
+      background-image: radial-gradient(rgba(134,153,163,.11) .8px, transparent .8px);
+      background-size: 17px 17px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      overflow-y: auto;
+    }
+    .wa-date-pill {
+      align-self: center;
+      background: #182229;
+      color: #b7c4cc;
+      border-radius: 7px;
+      padding: 5px 10px;
+      font-size: .68rem;
+      margin-bottom: 3px;
+    }
+    .wa-bubble {
+      position: relative;
+      background: #202c33;
+      color: #e9edef;
+      padding: 9px 10px 18px;
+      border-radius: 0 8px 8px 8px;
+      max-width: 91%;
+      align-self: flex-start;
+      line-height: 1.48;
+      font-size: 0.88rem;
+      box-shadow: 0 1px 1px rgba(0,0,0,0.18);
+      overflow-wrap: anywhere;
+    }
+    .wa-bubble.user-reply {
+      background: #005c4b;
+      align-self: flex-end;
+      border-radius: 8px 0 8px 8px;
+    }
+    .wa-meta {
+      position: absolute;
+      right: 7px;
+      bottom: 3px;
+      color: #aebac1;
+      font-size: .61rem;
+      white-space: nowrap;
+    }
+    .wa-bubble.user-reply .wa-meta { color: #b8d8d0; }
+    .wa-composer {
+      background: #202c33;
+      padding: 8px 9px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #aebac1;
+      border-top: 1px solid #2a3942;
+    }
+    .wa-compose-field {
+      background: #2a3942;
+      border-radius: 22px;
+      min-height: 36px;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      font-size: .78rem;
+      color: #aebac1;
+    }
+    .wa-mic {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      background: #00a884;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .95rem;
+    }
+
+    /* SMS Simulado */
+    .frame-sms {
+      background: #f4f4f4;
+      color: #171717;
+      min-height: 390px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .sms-header {
+      background: #ffffff;
+      padding: 15px 12px;
+      text-align: center;
+      border-bottom: 1px solid #dedede;
+      font-weight: bold;
+      color: #222;
+      font-size: 0.85rem;
+    }
+    .sms-body {
+      padding: 18px 15px;
+      display: flex;
+      min-height: 230px;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .sms-bubble {
+      background: #e3e3e3;
+      color: #171717;
+      padding: 11px 14px;
+      border-radius: 18px;
+      max-width: 90%;
+      line-height: 1.45;
+      font-size: 0.9rem;
+      align-self: flex-start;
+    }
+    .sms-bubble.user-reply {
+      background: #b9e8ad;
+      color: #172516;
+      align-self: flex-end;
+    }
+
+    /* E-mail Simulado */
+    .frame-email {
+      background: #ffffff;
+      color: #202124;
+      min-height: 390px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .email-toolbar {
+      background: #f6f8fc;
+      color: #5f6368;
+      padding: 10px 15px;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 0.78rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .email-header {
+      background: #ffffff;
+      padding: 15px 18px 10px;
+      border-bottom: 1px solid #eeeeee;
+      font-size: 0.85rem;
+      color: #202124;
+    }
+    .email-subject {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #202124;
+      overflow-wrap: anywhere;
+    }
+    .email-sender-line {
+      color: #5f6368;
+      overflow-wrap: anywhere;
+    }
+    .email-field {
+      margin-bottom: 3px;
+    }
+    .email-label {
+      color: #5f6368;
+    }
+    .email-body {
+      padding: 20px 18px;
+      background: #ffffff;
+      flex: 1;
+      min-height: 190px;
+      line-height: 1.6;
+      font-size: 0.92rem;
+      color: #202124;
+      overflow-y: auto;
+    }
+    .technical-headers-panel {
+      background: #090d16;
+      border: 1px dashed var(--accent-yellow);
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 0.75rem;
+      color: var(--accent-yellow);
+      display: none;
+    }
+    .technical-headers-panel.active {
+      display: block;
+    }
+
+    /* Banco / Portal Falso Simulado */
+    .frame-bank {
+      background: #f4f6f9;
+      color: #333;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      font-family: sans-serif;
+    }
+    .browser-bar {
+      background: #222;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+    }
+    .browser-url {
+      background: #333;
+      padding: 3px 8px;
+      border-radius: 3px;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #ff9999;
+    }
+    .bank-content {
+      padding: 20px;
+      text-align: center;
+      max-width: 380px;
+      margin: auto;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      font-family: sans-serif;
+    }
+    .bank-logo {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #003366;
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+    }
+    .fake-browser-warning {
+      background: #ffebee;
+      color: #c62828;
+      border: 1px solid #ef9a9a;
+      padding: 8px;
+      font-size: 0.75rem;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      display: none;
+      text-align: left;
+    }
+
+    /* Hotspots: clicáveis, mas sem sublinhado ou dica visual antecipada */
+    .hotspot {
+      background: transparent;
+      border-bottom: none;
+      cursor: inherit;
+      padding: 0;
+      border-radius: 0;
+      transition: color 0.2s, background 0.2s;
+    }
+    .hotspot:hover {
+      background: transparent;
+    }
+    .hotspot.found {
+      background: rgba(0, 255, 102, 0.13);
+      border-bottom: none;
+      color: inherit;
+      font-weight: inherit;
+    }
+
+    /* Opções de Chat Interativo */
+    .chat-options-bar {
+      display: flex;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(13, 27, 42, 0.9);
+      border-top: 1px solid var(--border-color);
+      flex-wrap: wrap;
+    }
+    .chat-opt-btn {
+      background: var(--bg-card-alt);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      transition: all 0.2s;
+    }
+    .chat-opt-btn:hover {
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+
+    /* Painel de Decisão */
+    #decision-panel {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* ==========================================================================
+       5. MODAL DE TOOLTIP DE EXPLICAÇÃO
+       ========================================================================== */
+    .hud-modal-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(10, 15, 29, 0.88);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      padding: 20px;
+    }
+    .hud-modal-overlay.active {
+      display: flex;
+    }
+    .hud-modal-content {
+      background: var(--bg-card);
+      border: 2px solid var(--accent-blue);
+      padding: 25px;
+      max-width: 500px;
+      width: 100%;
+      clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.3);
+    }
+
+    /* ==========================================================================
+       6. OVERLAY MODO CONSEQUÊNCIA (FALHA)
+       ========================================================================== */
+    #breach-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(20, 0, 5, 0.96);
+      border: 3px solid var(--accent-red);
+      display: none;
+      flex-direction: column;
+      padding: 22px;
+      z-index: 200;
+      overflow-y: auto;
+      animation: pulse-border 1.5s infinite alternate;
+    }
+    #breach-overlay.active {
+      display: flex;
+    }
+
+    @keyframes pulse-border {
+      0% { box-shadow: inset 0 0 15px var(--accent-red); }
+      100% { box-shadow: inset 0 0 35px var(--accent-red); }
+    }
+
+    .breach-header {
+      color: var(--accent-red);
+      font-size: 1.35rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-align: center;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .damage-report {
+      background: rgba(255, 0, 85, 0.12);
+      border: 1px solid var(--accent-red);
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    .action-plan {
+      background: rgba(0, 240, 255, 0.05);
+      border: 1px solid var(--accent-blue);
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+    }
+
+    .action-plan h4 {
+      color: var(--accent-blue);
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+    }
+
+    .action-plan ul {
+      margin-left: 20px;
+      line-height: 1.5;
+      font-size: 0.8rem;
+    }
+
+    /* ==========================================================================
+       7. TELA FINAL DE RELATÓRIO E RANKING
+       ========================================================================== */
+    .report-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin: 15px 0;
+    }
+
+    .report-card {
+      background: var(--bg-card-alt);
+      border: 1px solid var(--border-color);
+      padding: 12px;
+      border-radius: 4px;
+    }
+
+    .report-card h4 {
+      color: var(--accent-blue);
+      margin-bottom: 6px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+    }
+
+    .gold-tips {
+      background: rgba(0, 255, 102, 0.05);
+      border: 1px solid var(--accent-green);
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+
+    .gold-tips h4 {
+      color: var(--accent-green);
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+    }
+
+    .gold-tips ol {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+
+    .ranking-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 0.8rem;
+    }
+    .ranking-table th, .ranking-table td {
+      border: 1px solid var(--border-color);
+      padding: 6px 8px;
+      text-align: left;
+    }
+    .ranking-table th {
+      background: var(--bg-card-alt);
+      color: var(--accent-blue);
+    }
+
+    @media (max-width: 600px) {
+      #app-container {
+        width: 100%;
+        margin: 0;
+        border: none;
+        clip-path: none;
+        min-height: 100vh;
+      }
+      .hud-title {
+        font-size: 1.05rem;
+      }
+      #decision-panel {
+        flex-direction: column;
+      }
+      .hud-btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CONTAINER PRINCIPAL DA INTERFACE HUD -->
+  <div id="app-container">
+
+    <!-- HEADER SUPERIOR DE STATUS -->
+    <header id="hud-header">
+      <div class="hud-metric">
+        <span class="hud-label">Dificuldade</span>
+        <span id="hud-level" class="hud-value">FÁCIL</span>
+      </div>
+      <div class="hud-metric">
+        <span class="hud-label">Pontuação</span>
+        <span id="hud-score" class="hud-value">0 PTS</span>
+      </div>
+      <div class="hud-metric">
+        <span class="hud-label">Tempo</span>
+        <span id="hud-timer" class="hud-value">00:00</span>
+      </div>
+      <div class="hud-metric">
+        <span class="hud-label">Progresso</span>
+        <span id="hud-progress-text" class="hud-value">0 / 7</span>
+      </div>
+      <div class="progress-bar-container">
+        <div id="hud-progress-fill" class="progress-bar-fill"></div>
+      </div>
+    </header>
+
+    <!-- 1. TELA INICIAL -->
+    <section id="screen-intro" class="screen active">
+      <h1 class="hud-title">CYBER-DETECT: SIMULADOR AVANÇADO DE PHISHING</h1>
+      
+      <div class="intro-box">
+        <h3>
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-5.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8s0 0 0 0z"/></svg>
+          Módulo Tático de Treinamento e Análise de Engenharia Social (32 Cenários)
+        </h3>
+        <p>Aprenda a identificar ataques cibernéticos analisando 32 cenários reais e simulados em canais como WhatsApp, SMS, E-mail e Páginas de Login Bancárias. Interaja com os chats, inspecione cabeçalhos técnicos e teste sua atenção!</p>
+        <br>
+        <p><strong>INSTRUÇÕES:</strong> Clique nos sinais suspeitos (hotspots), interaja com o chat do golpista ou decida se a mensagem é um Golpe ou Legítima.</p>
+      </div>
+
+      <div style="width: 100%; max-width: 720px;">
+        <span class="hud-label" style="display: block; text-align: center; margin-bottom: 8px;">SELECIONE A DIFICULDADE INICIAL:</span>
+        <div class="difficulty-selector">
+          <div class="diff-card selected" data-diff="Fácil" onclick="selectDifficulty('Fácil')">
+            <h4>FÁCIL</h4>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">11 Cenários / Erros óbvios, ofertas e mensagens.</span>
+          </div>
+          <div class="diff-card" data-diff="Médio" onclick="selectDifficulty('Médio')">
+            <h4>MÉDIO</h4>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">11 Cenários / Domínios falsos e tentativas de engano.</span>
+          </div>
+          <div class="diff-card" data-diff="Difícil" onclick="selectDifficulty('Difícil')">
+            <h4>DIFÍCIL</h4>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">10 Cenários / Engenharia social avançada.</span>
+          </div>
+        </div>
+      </div>
+
+      <button id="btn-start" class="hud-btn hud-btn-success">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        INICIAR SIMULAÇÃO TÁTICA
+      </button>
+    </section>
+
+    <!-- 2. TELA PRINCIPAL DO SIMULADOR (JOGO) -->
+    <section id="screen-game" class="screen">
+      <div style="display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <button id="btn-hint" class="hud-btn hud-btn-warning" style="padding: 5px 12px; font-size: 0.75rem;">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
+          PEDIR DICA (-50 PTS)
+        </button>
+      </div>
+
+      <!-- MOLDURA DO APLICATIVO SIMULADO -->
+      <div id="app-frame-container">
+        <!-- Injetado via JS -->
+      </div>
+
+      <!-- BOTOES DE DECISAO -->
+      <div id="decision-panel" style="margin-top: 10px;">
+        <button id="btn-mark-phishing" class="hud-btn hud-btn-danger">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+          MARCAR COMO GOLPE / PHISHING
+        </button>
+        <button id="btn-mark-legit" class="hud-btn hud-btn-success">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          PARECE LEGÍTIMA / CONFIÁVEL
+        </button>
+      </div>
+    </section>
+
+    <!-- 3. TELA FINAL / RELATÓRIO TÁTICO -->
+    <section id="screen-report" class="screen">
+      <h1 class="hud-title">RELATÓRIO TÁTICO DE SEGURANÇA</h1>
+
+      <div class="report-grid">
+        <div class="report-card">
+          <h4>Classificação Final</h4>
+          <p id="report-rating" style="font-size: 1.05rem; font-weight: bold; color: var(--accent-green);">ESPECIALISTA</p>
+        </div>
+        <div class="report-card">
+          <h4>Pontuação Final</h4>
+          <p id="report-score" style="font-size: 1.05rem; font-weight: bold; color: var(--accent-blue);">0 PTS</p>
+        </div>
+        <div class="report-card">
+          <h4>Categoria com Mais Erros</h4>
+          <p id="report-weakness" style="font-size: 0.85rem; color: var(--accent-red);">Nenhuma detectada</p>
+        </div>
+      </div>
+
+      <div class="report-card" style="margin-bottom: 12px;">
+        <h4>Sinais Ocultos que Passaram Batido</h4>
+        <ul id="report-missed-list" style="margin-left: 18px; font-size: 0.8rem; color: var(--text-muted); max-height: 90px; overflow-y: auto;">
+          <li>Nenhum sinal ignorado! Atenção impecável.</li>
+        </ul>
+      </div>
+
+      <!-- DICAS DE PROTEÇÃO -->
+      <div class="gold-tips">
+        <h4>DIRETRIZES DE DEFESA CIBERNÉTICA:</h4>
+        <ol>
+          <li><strong>Checagem de Domínio:</strong> Valide se URLs usam domínios oficiais e HTTPS legítimo.</li>
+          <li><strong>Gatilho de Urgência:</strong> Desconfie de prazos estipulados para transferências ou cliques imediatos.</li>
+          <li><strong>Uso do MED:</strong> Em caso de Pix fraudulento, acione imediatamente o Mecanismo Especial de Devolução no banco.</li>
+          <li><strong>Autenticação em Duas Etapas (2FA):</strong> Ative chaves físicas ou aplicativos autenticadores em todas as contas.</li>
+        </ol>
+      </div>
+
+      <!-- RANKING LOCAL -->
+      <div class="report-card">
+        <h4>Ranking da Sessão Local</h4>
+        <table class="ranking-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Data</th>
+              <th>Nível</th>
+              <th>Pontos</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="ranking-body">
+            <!-- Preenchido via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <button id="btn-restart" class="hud-btn hud-btn-success" style="margin-top: 12px; align-self: center;">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+        REINICIAR SIMULAÇÃO
+      </button>
+    </section>
+
+    <!-- MODAL DE EXPLICAÇÃO DO HOTSPOT -->
+    <div id="modal-explanation" class="hud-modal-overlay">
+      <div class="hud-modal-content">
+        <h3 style="color: var(--accent-green); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; font-size: 1rem;">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          SINAL SUSPEITO IDENTIFICADO!
+        </h3>
+        <p id="modal-explanation-text" style="font-size: 0.85rem; line-height: 1.5; color: var(--text-main); margin-bottom: 15px;"></p>
+        <button id="btn-close-modal" class="hud-btn" style="width: 100%;">CONTINUAR ANÁLISE</button>
+      </div>
+    </div>
+
+    <!-- OVERLAY MODO CONSEQUÊNCIA (FALHA) -->
+    <div id="breach-overlay">
+      <div class="breach-header">
+        <svg class="icon" style="width: 28px; height: 28px;" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+        MODO CONSEQUÊNCIA: DISPOSITIVO COMPROMETIDO!
+      </div>
+
+      <div class="damage-report">
+        <h4 style="color: var(--accent-red); margin-bottom: 5px; font-size: 0.85rem;">IMPACTO SIMULADO DO ATAQUE:</h4>
+        <p id="breach-damage-text" style="font-size: 0.85rem; line-height: 1.4; color: #ff99bb;"></p>
+      </div>
+
+      <div class="action-plan">
+        <h4>PLANO DE RECUPERAÇÃO DE EMERGÊNCIA:</h4>
+        <ul id="breach-action-list">
+          <!-- Injetado via JS -->
+        </ul>
+      </div>
+
+      <button id="btn-close-breach" class="hud-btn hud-btn-danger" style="margin-top: auto; align-self: center; width: 100%;">
+        ENTENDI OS RISCOS / PRÓXIMO CENÁRIO
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ==========================================================================
+     8. LÓGICA JAVASCRIPT E BANCO DE DADOS DOS 20 CENÁRIOS
+     ========================================================================== -->
+  <script>
+    /* BANCO DE DADOS COM 20 CENÁRIOS COMPLETOS */
+    const allScenarios = {
+      "Fácil": [
+        {
+          id: 1,
+          level: "Fácil",
+          category: "Parente Pedindo Pix",
+          channel: "whatsapp",
+          isPhishing: true,
+          sender: "+55 11 98888-7777",
+          avatarText: "MÃE",
+          content: `Oi filho(a), mudei de numero esse e meu novo zap. Salva ai!<br>
+          Preciso pagar um boleto urgente e meu app esta travado.<br>
+          <span class="hotspot" data-id="1">Pode fazer um Pix de R$ 850,00 pra mim?</span><br>
+          Chave Pix CPF: <span class="hotspot" data-id="2">123.456.789-00 (Nome: Carlos Silva Golpista)</span>.<br>
+          <span class="hotspot" data-id="3">Faz rapido por favor que vai vencer agora!</span>`,
+          chatOptions: [
+            { label: "Quem é você?", reply: "Sou eu mãe, troca de chip!", response: "Mãe? Mas sua voz por áudio seria diferente... É golpe!" },
+            { label: "Vou fazer agora", reply: "Manda o comprovante!", response: "Golpista comemora e some com o dinheiro." }
+          ],
+          hotspots: [
+            { id: "1", text: "Pedido imediato de Pix", explanation: "Golpe do Falso Parente: criminosos usam fotos obtidas em redes sociais." },
+            { id: "2", text: "Chave Pix em nome de desconhecido", explanation: "O CPF pertence a uma conta laranja." },
+            { id: "3", text: "Pressão de urgência", explanation: "Estratégia para impedir que você ligue para o número antigo." }
+          ],
+          damageText: "SUA CONTA FOI ESVAZIADA! Você transferiu R$ 850,00 para um estelionatário.",
+          actions: [
+            "Acione imediatamente o MED (Mecanismo Especial de Devolução) no app do seu banco.",
+            "Ligue para o número antigo do seu familiar para confirmar a fraude.",
+            "Registre um Boletim de Ocorrência (B.O.)."
+          ]
+        },
+        {
+          id: 2,
+          level: "Fácil",
+          category: "Entrega de Encomenda",
+          channel: "sms",
+          isPhishing: true,
+          sender: "28400",
+          content: `CORREIOS_INFO: Sua encomenda esta retida devido a taxa alfandegaria de R$ 18,90.<br>
+          <span class="hotspot" data-id="1">Evite a devolucao do pacote pagando no link:</span><br>
+          <span class="hotspot" data-id="2">http://rastreio-correios-taxa.example/pagar</span>`,
+          chatOptions: [
+            { label: "Qual o código?", reply: "BR992812SP", response: "Código genérico inventado pelo robô de spam." }
+          ],
+          hotspots: [
+            { id: "1", text: "Falta de acentuação", explanation: "SMS falsos frequentemente ignoram regras gramaticais e acentos." },
+            { id: "2", text: "Link suspeito (.example)", explanation: "Os Correios utilizam exclusivamente o domínio oficial 'correios.com.br'." }
+          ],
+          damageText: "CARTÃO CLONADO! Seus dados de pagamento foram capturados em página falsa.",
+          actions: [
+            "Bloqueie o cartão de crédito utilizado no aplicativo do banco.",
+            "Conteste as cobranças desconhecidas.",
+            "Nunca clique em links curtos ou desconhecidos recebidos por SMS."
+          ]
+        },
+        {
+          id: 3,
+          level: "Fácil",
+          category: "Prêmio Falso",
+          channel: "whatsapp",
+          isPhishing: true,
+          sender: "+55 21 99911-2233",
+          avatarText: "SORT",
+          content: `PARABENS! Seu numero foi sorteado na Promocao Aniversario Horizonte.<br>
+          <span class="hotspot" data-id="1">Voce ganhou um Smartphone Ultima Geracao!</span><br>
+          <span class="hotspot" data-id="2">Para liberar o frete, pague apenas a taxa de expediente de R$ 29,90 via Pix.</span>`,
+          chatOptions: [
+            { label: "Como resgatar?", reply: "Pague o frete e mande o comprovante.", response: "Tentativa clássica de extorquir taxas fictícias." }
+          ],
+          hotspots: [
+            { id: "1", text: "Prêmio inesperado", explanation: "Ninguém ganha prêmios em sorteios dos quais não participou." },
+            { id: "2", text: "Cobrança de taxa de frete", explanation: "Empresas sérias nunca exigem pagamento antecipado de taxas para entrega de brindes." }
+          ],
+          damageText: "DADOS PESSOAIS VAZADOS! Você forneceu CPF, endereço e dados bancários para o golpista.",
+          actions: [
+            "Monitore seu CPF regularmente no Registrato do Banco Central.",
+            "Ignore qualquer outra mensagem do remetente e bloqueie o contato."
+          ]
+        },
+        {
+          id: 4,
+          level: "Fácil",
+          category: "Comunicação Escolar",
+          channel: "email",
+          isPhishing: false,
+          sender: "secretaria@escola-horizonte.example",
+          subject: "Calendário Acadêmico do Próximo Semestre",
+          content: `Prezados alunos,<br><br>
+          Informamos que o calendário oficial das avaliações do próximo semestre já está publicado em nosso portal institucional.<br>
+          Lembramos que a escola nunca solicita senhas ou dados confidenciais por e-mail.<br><br>
+          Atenciosamente,<br>Secretaria da Escola Horizonte.`,
+          technicalHeaders: "Return-Path: <secretaria@escola-horizonte.example>\nSPF: Pass (domain of escola-horizonte.example designates IP 192.0.2.1)\nDKIM: 'OK' with domain escola-horizonte.example",
+          hotspots: [],
+          damageText: "FALSO ALARME! Esta mensagem era 100% legítima.",
+          actions: ["Mensagens legítimas informam normas sem exigir dados confidenciais."]
+        },
+        {
+          id: 5,
+          level: "Fácil",
+          category: "Falso Suporte Netflix",
+          channel: "email",
+          isPhishing: true,
+          sender: "suporte@netflx-atualizacao.example",
+          subject: "PROBLEMA COM SUA ASSINATURA: Pagamento Recusado",
+          content: `Olá cliente,<br><br>
+          <span class="hotspot" data-id="1">Seu ultimo pagamento foi recusado pelo banco.</span><br>
+          Sua conta sera cancelada hoje.<br>
+          <span class="hotspot" data-id="2">Atualize seus dados em: http://netflx-atualiza.example/login</span>`,
+          technicalHeaders: "Return-Path: <bounces@netflx-atualizacao.example>\nSPF: Fail (IP 203.0.113.50 is not authorized)\nDKIM: None",
+          hotspots: [
+            { id: "1", text: "Alerta de pagamento recusado genérico", explanation: "Tentativa de induzir pânico pelo cancelamento do serviço de streaming." },
+            { id: "2", text: "Erro de digitação no domínio (netflx)", explanation: "O domínio oficial é 'netflix.com'. Note a ausência da letra 'i'." }
+          ],
+          damageText: "CONTA DE STREAMING ROUBADA! Criminosos acessaram sua conta e alteraram a senha.",
+          actions: [
+            "Entre no site oficial da Netflix digitando o endereço no navegador.",
+            "Altere sua senha imediatamente e encerre sessões ativas em outros dispositivos."
+          ]
+        },
+        {
+          id: 6,
+          level: "Fácil",
+          category: "Fatura de Cartão",
+          channel: "email",
+          isPhishing: false,
+          sender: "fatura@bancohorizonte.example",
+          subject: "Sua Fatura do Cartão Horizonte está Disponível",
+          content: `Prezado(a) cliente,<br><br>
+          Sua fatura com vencimento para o dia 10 está fechada. O valor total é R$ 1.250,00.<br>
+          Você pode visualizar o boleto e os detalhes diretamente no aplicativo oficial do Banco Horizonte.<br><br>
+          Banco Horizonte S.A.`,
+          technicalHeaders: "Return-Path: <fatura@bancohorizonte.example>\nSPF: Pass (domain designates IP 198.51.100.10)\nDKIM: 'OK' with domain bancohorizonte.example",
+          hotspots: [],
+          damageText: "FALSO ALARME! E-mail legítimo de fechamento de fatura.",
+          actions: ["Bancos legítimos enviam extratos informativos sem links diretos para pagamento externo."]
+        },
+        {
+          id: 7,
+          level: "Fácil",
+          category: "Recarga Grátis",
+          channel: "sms",
+          isPhishing: true,
+          sender: "8899",
+          content: `PROMO OPERADORA: Voce ganhou 10GB de internet gratis!<br>
+          <span class="hotspot" data-id="1">Resgate agora mesmo enviando seus dados cadastrais e senha do app para o link:</span><br>
+          <span class="hotspot" data-id="2">http://recarga-gratis-operadora.example</span>`,
+          hotspots: [
+            { id: "1", text: "Pedido de senha por SMS", explanation: "Nenhuma operadora solicita senhas pessoais por mensagens de texto." },
+            { id: "2", text: "Link externo não oficial", explanation: "Promoções reais ocorrem dentro dos aplicativos oficiais das operadoras." }
+          ],
+          damageText: "LINHA TELEFÔNICA CLONADA! Criminosos acessaram seu plano e realizaram portabilidade fraudulenta.",
+          actions: [
+            "Entre em contato com sua operadora de telefonia imediatamente.",
+            "Bloqueie o chip e solicite a suspensão temporária de linhas associadas."
+          ]
+        },
+        {
+          id: 21, level: "Fácil", category: "Código de verificação inesperado", channel: "whatsapp",
+          isPhishing: true, sender: "+55 85 90000-1122", avatarText: "SUP",
+          content: `Olá! Sou do suporte técnico.<br><span class="hotspot" data-id="1">Envie o código de 6 dígitos que chegou por SMS para confirmar sua conta.</span><br><span class="hotspot" data-id="2">Se não enviar agora, sua conta será bloqueada.</span>`,
+          chatOptions: [
+            {label:"Não vou compartilhar códigos",reply:"Não compartilho códigos de segurança.",response:"Boa decisão! Códigos de verificação são pessoais e podem permitir acesso à conta."},
+            {label:"Vou enviar o código",reply:"Aqui está o código.",response:"Risco de invasão! Um código pode permitir que outra pessoa entre na sua conta."},
+            {label:"Vou confirmar no app oficial",reply:"Vou abrir o aplicativo oficial.",response:"Excelente: confira alertas diretamente no aplicativo, sem usar links ou instruções do contato."}
+          ],
+          hotspots:[{id:"1",text:"Pedido de código de verificação",explanation:"Códigos de autenticação nunca devem ser compartilhados com terceiros."},{id:"2",text:"Ameaça de bloqueio imediato",explanation:"A pressão tenta fazer você agir sem verificar a identidade do remetente."}],
+          damageText:"CONTA COMPROMETIDA! O código poderia permitir que terceiros assumissem o acesso.",
+          actions:["Não compartilhe códigos recebidos por SMS ou aplicativo.","Revise sessões conectadas e ative autenticação em duas etapas."]
+        },
+        {
+          id: 22, level: "Fácil", category: "Pesquisa premiada falsa", channel: "sms",
+          isPhishing: true, sender: "PROMO-INFO",
+          content: `Você foi escolhido para receber um vale-compras!<br><span class="hotspot" data-id="1">Responda com seu CPF e data de nascimento para validar o prêmio.</span><br><span class="hotspot" data-id="2">Você tem apenas 10 minutos.</span>`,
+          chatOptions:[
+            {label:"Quero o prêmio",reply:"Segue meu CPF.",response:"Perigo: dados pessoais podem ser usados em tentativas de fraude."},
+            {label:"Vou verificar no site oficial",reply:"Não enviarei dados por SMS.",response:"Correto! Procure a promoção digitando o endereço oficial no navegador."},
+            {label:"Denunciar e bloquear",reply:"Esta mensagem parece suspeita.",response:"Boa escolha quando a promoção não pode ser confirmada por um canal confiável."}
+          ],
+          hotspots:[{id:"1",text:"Solicitação de dados pessoais",explanation:"Evite enviar documentos e dados pessoais para remetentes não verificados."},{id:"2",text:"Prazo curto para pressionar",explanation:"A urgência reduz o tempo que a pessoa tem para conferir a oferta."}],
+          damageText:"DADOS PESSOAIS EXPOSTOS! As informações poderiam ser usadas em fraudes de identidade.",
+          actions:["Não responda com dados pessoais.","Verifique promoções no site ou aplicativo oficial da empresa."]
+        },
+        {
+          id: 23, level: "Fácil", category: "Atualização falsa de aplicativo", channel: "email",
+          isPhishing: true, sender: "atualizacao@app-seguro.example", subject: "Atualização obrigatória",
+          content: `Olá, usuário.<br><span class="hotspot" data-id="1">Baixe o arquivo anexado para corrigir um problema de segurança.</span><br><span class="hotspot" data-id="2">A instalação deve ser feita imediatamente.</span>`,
+          technicalHeaders:"Return-Path: <download@app-seguro.example>\nSPF: Fail\nDKIM: None",
+          chatOptions:[
+            {label:"Baixar o anexo",reply:"Vou instalar agora.",response:"Não é seguro executar anexos inesperados; eles podem conter programas maliciosos."},
+            {label:"Abrir a loja oficial",reply:"Vou procurar atualização na loja oficial.",response:"Boa prática: atualize aplicativos pela loja oficial ou pelo próprio programa."},
+            {label:"Perguntar ao suporte oficial",reply:"Vou confirmar com o suporte.",response:"Correto! Use um contato obtido no site oficial, não os dados da mensagem."}
+          ],
+          hotspots:[{id:"1",text:"Anexo inesperado",explanation:"Arquivos anexados em mensagens não solicitadas podem conter malware."},{id:"2",text:"Pressão para instalar rapidamente",explanation:"A urgência tenta impedir que você verifique a origem."}],
+          damageText:"DISPOSITIVO EM RISCO! Um anexo malicioso poderia instalar software indesejado.",
+          actions:["Não abra anexos inesperados.","Atualize programas por lojas e canais oficiais."]
+        },
+        {
+          id: 24, level: "Fácil", category: "Aviso legítimo de atividade", channel: "email",
+          isPhishing: false, sender: "alertas@conta.exemplo.gov.br", subject: "Novo acesso registrado",
+          content: `Olá!<br>Foi registrado um acesso à sua conta em um novo dispositivo.<br>Se reconhece a atividade, nenhuma ação é necessária.<br>Se não reconhece, abra o aplicativo oficial digitando o endereço conhecido no navegador.`,
+          technicalHeaders:"Return-Path: <alertas@conta.exemplo.gov.br>\nSPF: Pass\nDKIM: OK",
+          hotspots:[], damageText:"FALSO ALARME! A mensagem orienta a verificar a conta por um canal oficial.",
+          actions:["Mesmo em alertas legítimos, confira o endereço do remetente.","Se houver dúvida, abra o aplicativo oficial por conta própria."]
+        }
+      ],
+      "Médio": [
+        {
+          id: 8,
+          level: "Médio",
+          category: "Falso Suporte de Banco",
+          channel: "bank",
+          isPhishing: true,
+          sender: "http://bancohorizonte-seguranca.example/login",
+          content: `Portal de Segurança Banco Horizonte`,
+          hotspots: [
+            { id: "1", text: "URL suspeita (bancohorizonte-seguranca.example)", explanation: "O domínio oficial do banco é 'bancohorizonte.com'. Termos como 'seguranca' no domínio indicam phishing." },
+            { id: "2", text: "Protocolo HTTP inseguro", explanation: "Páginas de login bancário exigem HTTPS com certificado digital válido." },
+            { id: "3", text: "Solicitação de Token e Senha Completa", explanation: "Bancos nunca exigem senha de 8 dígitos combinada com token completo em formulário web." }
+          ],
+          damageText: "CONTA BANCÁRIA COMPROMETIDA! Criminosos acessaram seu saldo e realizaram transferências via Pix.",
+          actions: [
+            "Ligue imediatamente para a Central de Atendimento do seu banco.",
+            "Bloqueie o acesso digital e solicite a troca de chaves Pix.",
+            "Registre um Boletim de Ocorrência."
+          ]
+        },
+        {
+          id: 9,
+          level: "Médio",
+          category: "Boleto Falso",
+          channel: "email",
+          isPhishing: true,
+          sender: "cobranca@condominio-horizonte-atualizado.example",
+          subject: "URGENTE: Segunda via boleto condomínio com vencimento hoje",
+          content: `Prezado condômino,<br><br>
+          <span class="hotspot" data-id="1">Identificamos alteração no código de barras do seu boleto de condomínio deste mês.</span><br>
+          Utilize obrigatoriamente o novo arquivo em anexo para evitar multa.<br>
+          <span class="hotspot" data-id="2">Link do Boleto: http://condominio-horizonte-atualizado.example/boleto.pdf.exe</span>`,
+          technicalHeaders: "Return-Path: <bounce@condominio-horizonte-atualizado.example>\nSPF: SoftFail\nDKIM: Fail",
+          hotspots: [
+            { id: "1", text: "Alerta de alteração de boleto por e-mail", explanation: "Boletos reais não mudam de código de barras repentinamente por aviso de e-mail." },
+            { id: "2", text: "Extensão dupla perigosa (.pdf.exe)", explanation: "O arquivo finge ser PDF mas é um executável malicioso (.exe)." }
+          ],
+          damageText: "INFECÇÃO POR RANSOMWARE! Seus arquivos pessoais foram criptografados e exigiram resgate.",
+          actions: [
+            "Desconecte o computador da rede imediatamente.",
+            "Execute uma varredura profunda com antivírus corporativo.",
+            "Restaure arquivos a partir de um backup offline seguro."
+          ]
+        },
+        {
+          id: 10,
+          level: "Médio",
+          category: "Alerta de Login Real",
+          channel: "email",
+          isPhishing: false,
+          sender: "no-reply@notificacoes.escola-horizonte.example",
+          subject: "Alerta de Novo Acesso à sua Conta",
+          content: `Olá,<br><br>
+          Identificamos um novo acesso ao seu portal acadêmico a partir de um dispositivo móvel em São Paulo - SP.<br>
+          Se você reconhece esta atividade, nenhuma ação é necessária.<br>
+          Caso contrário, altere sua senha imediatamente no painel oficial.<br><br>
+          Equipe de Segurança - Escola Horizonte.`,
+          technicalHeaders: "Return-Path: <no-reply@notificacoes.escola-horizonte.example>\nSPF: Pass\nDKIM: 'OK' with domain escola-horizonte.example",
+          hotspots: [],
+          damageText: "FALSO ALARME! Mensagem legítima de notificação de segurança.",
+          actions: ["Alertas legítimos fornecem instruções claras para alteração de senha no portal oficial."]
+        },
+        {
+          id: 11,
+          level: "Médio",
+          category: "Falso Emprego",
+          channel: "whatsapp",
+          isPhishing: true,
+          sender: "+55 11 96666-5544",
+          avatarText: "RH",
+          content: `Olá! Selecionamos seu currículo para uma vaga de Assistente Remoto com salário de R$ 4.500,00.<br>
+          <span class="hotspot" data-id="1">Para prosseguir com a contratação, preencha seu cadastro e pague a taxa de exame médico admissional de R$ 50,00.</span>`,
+          chatOptions: [
+            { label: "Quais os benefícios?", reply: "Vale refeição e plano de saúde. Só pagar a taxa de exame.", response: "Golpista insiste no pagamento antecipado." }
+          ],
+          hotspots: [
+            { id: "1", text: "Cobrança de taxa para contratação", explanation: "Empresas sérias jamais cobram taxas de candidatos para exames admissionais ou processos seletivos." }
+          ],
+          damageText: "GOLPE DO FALSO EMPREGO! Você perdeu dinheiro e enviou documentos pessoais para criminosos.",
+          actions: [
+            "Corte o contato imediatamente com o suposto recrutador.",
+            "Monitore emissão de CPFs e abertura de contas em seu nome."
+          ]
+        },
+        {
+          id: 12,
+          level: "Médio",
+          category: "Smishing Bancário Avançado",
+          channel: "sms",
+          isPhishing: true,
+          sender: "BANCO-HORIZ",
+          content: `BANCO HORIZONTE: Sua chave Pix foi cadastrada em outro dispositivo (IP: 192.168.1.50).<br>
+          <span class="hotspot" data-id="1">Se nao foi voce, cancele a operacao imediatamente em:</span><br>
+          <span class="hotspot" data-id="2">http://bancohorizonte-cancelamento.example</span>`,
+          hotspots: [
+            { id: "1", text: "Alerta de segurança alarmante", explanation: "Uso de termos técnicos falsos para gerar pânico e levar ao clique rápido." },
+            { id: "2", text: "Link externo em SMS", explanation: "Bancos nunca enviam links diretos para cancelamento de chaves Pix por SMS." }
+          ],
+          damageText: "CREDENCIAIS ROUBADAS! Acesso ao internet banking comprometido por engenharia social.",
+          actions: [
+            "Entre no aplicativo oficial do banco para verificar o status real de suas chaves Pix.",
+            "Altere sua senha de acesso e PIN de transações."
+          ]
+        },
+        {
+          id: 13,
+          level: "Médio",
+          category: "Agendamento Médico Real",
+          channel: "sms",
+          isPhishing: false,
+          sender: "ClinicaSaude",
+          content: `Lembrete: Sua consulta na Clinica Horizonte esta agendada para amanhã às 14:30.<br>
+          Confirme respondendo SIM ou acesse nosso portal oficial para reagendar.`,
+          hotspots: [],
+          damageText: "FALSO ALARME! Mensagem legítima de agendamento médico.",
+          actions: ["Mensagens de clínicas legítimas informam horários sem solicitar senhas ou dados bancários."]
+        },
+        {
+          id: 14,
+          level: "Médio",
+          category: "Vazamento de Dados Corporativos (Spear Phishing)",
+          channel: "email",
+          isPhishing: true,
+          sender: "diretoria@escola-horizonte-corp.example",
+          subject: "Confidencial: Nova política de remuneração e bônus",
+          content: `Prezado colaborador,<br><br>
+          <span class="hotspot" data-id="1">A diretoria aprovou um reajuste salarial extraordinário.</span><br>
+          Confirme sua participação fazendo login na planilha interna:<br>
+          <span class="hotspot" data-id="2">http://intranet-horizonte-login.example/auth</span>`,
+          technicalHeaders: "Return-Path: <admin@escola-horizonte-corp.example>\nSPF: Fail\nDKIM: None",
+          hotspots: [
+            { id: "1", text: "Promessa de reajuste salarial individual", explanation: "Técnica de spear phishing focada em despertar curiosidade e ganância profissional." },
+            { id: "2", text: "Link externo simulando intranet", explanation: "O link aponta para um domínio externo controlado por hackers para roubar senhas corporativas." }
+          ],
+          damageText: "COMPROMETIMENTO DE CREDENCIAIS CORPORATIVAS! Hackers obtiveram acesso à rede interna da instituição.",
+          actions: [
+            "Comunique o setor de TI e Segurança da Informação imediatamente.",
+            "Altere a senha de acesso à rede corporativa e e-mail institucional."
+          ]
+        },
+        {
+          id: 25, level: "Médio", category: "Falso aviso de armazenamento", channel: "email",
+          isPhishing: true, sender: "nuvem-alerta@storage-renova.example", subject: "Seus arquivos serão apagados",
+          content: `Seu armazenamento está cheio.<br><span class="hotspot" data-id="1">Clique para ampliar sua capacidade gratuitamente.</span><br><span class="hotspot" data-id="2">Entre com seu e-mail e senha para evitar a exclusão dos arquivos.</span>`,
+          technicalHeaders:"Return-Path: <mailer@storage-renova.example>\nSPF: Fail\nDKIM: Fail",
+          chatOptions:[
+            {label:"Entrar pelo link",reply:"Vou acessar agora.",response:"A página pode capturar suas credenciais. Não use links inesperados para entrar na conta."},
+            {label:"Verificar no aplicativo oficial",reply:"Vou conferir o armazenamento no app.",response:"Correto! Confira o espaço disponível no aplicativo ou site oficial."},
+            {label:"Ignorar e denunciar",reply:"Não vou informar minha senha.",response:"Boa decisão se a origem não puder ser confirmada."}
+          ],
+          hotspots:[{id:"1",text:"Oferta inesperada",explanation:"Benefícios gratuitos podem ser usados como isca para obter cliques."},{id:"2",text:"Pedido de senha para evitar perda",explanation:"A ameaça de perda de arquivos tenta induzir o fornecimento de credenciais."}],
+          damageText:"CONTA DE NUVEM EM RISCO! As credenciais poderiam ser roubadas.",
+          actions:["Acesse a conta digitando o endereço oficial.","Se informou a senha, troque-a e encerre sessões desconhecidas."]
+        },
+        {
+          id: 26, level: "Médio", category: "Convite falso para documento compartilhado", channel: "email",
+          isPhishing: true, sender: "compartilhamento@docs-equipe.example", subject: "Documento compartilhado com você",
+          content: `Um colega compartilhou um documento.<br><span class="hotspot" data-id="1">O link solicita login em uma página externa.</span><br><span class="hotspot" data-id="2">O remetente tem um endereço diferente do usado pela equipe.</span>`,
+          technicalHeaders:"Return-Path: <notice@docs-equipe.example>\nSPF: SoftFail\nDKIM: None",
+          chatOptions:[
+            {label:"Fazer login pelo link",reply:"Vou abrir o documento.",response:"Cuidado: uma página de login externa pode imitar o serviço verdadeiro."},
+            {label:"Confirmar com o colega",reply:"Vou perguntar por outro canal.",response:"Excelente! Confirme com a pessoa por um canal conhecido antes de abrir o documento."},
+            {label:"Acessar a plataforma oficial",reply:"Vou abrir a plataforma diretamente.",response:"Boa prática: verifique os documentos dentro da plataforma oficial."}
+          ],
+          hotspots:[{id:"1",text:"Login em página externa",explanation:"Confira o domínio antes de digitar credenciais."},{id:"2",text:"Remetente fora do padrão",explanation:"Diferenças pequenas no endereço podem indicar falsificação."}],
+          damageText:"CREDENCIAIS EXPOSTAS! O login poderia ser capturado por uma página falsa.",
+          actions:["Confirme compartilhamentos inesperados com o remetente.","Use favoritos ou o endereço oficial para entrar na plataforma."]
+        },
+        {
+          id: 27, level: "Médio", category: "Falso aviso de entrega", channel: "whatsapp",
+          isPhishing: true, sender: "+55 11 97777-0001", avatarText: "ENT",
+          content: `Olá, sua entrega está aguardando confirmação.<br><span class="hotspot" data-id="1">Precisamos de uma pequena taxa para liberar o pacote.</span><br><span class="hotspot" data-id="2">Acesse o link encurtado enviado abaixo.</span>`,
+          chatOptions:[
+            {label:"Pagar a taxa",reply:"Vou pagar para liberar.",response:"Não pague por um link recebido sem verificar a entrega nos canais oficiais."},
+            {label:"Consultar o rastreio oficial",reply:"Vou verificar no site oficial.",response:"Correto! Digite o endereço oficial da transportadora e consulte o código de rastreio."},
+            {label:"Pedir dados do pedido",reply:"Qual é o número do pedido?",response:"Mesmo com uma resposta convincente, confirme a informação no serviço oficial."}
+          ],
+          hotspots:[{id:"1",text:"Taxa inesperada",explanation:"Cobranças surpresa são usadas para induzir pagamentos rápidos."},{id:"2",text:"Link encurtado",explanation:"Links encurtados escondem o destino real."}],
+          damageText:"PAGAMENTO E DADOS EM RISCO! A página poderia capturar dados pessoais e financeiros.",
+          actions:["Consulte o rastreio no site oficial.","Não informe cartão ou senha em páginas recebidas por mensagem."]
+        },
+        {
+          id: 28, level: "Médio", category: "Solicitação legítima de confirmação", channel: "sms",
+          isPhishing: false, sender: "CLINICA-HORIZONTE",
+          content: `Lembrete da Clínica Horizonte: sua consulta está marcada para amanhã às 14h30.<br>Para alterar, entre no portal oficial ou ligue para o número que consta no seu comprovante de agendamento.<br>Não solicitamos senhas ou pagamentos por SMS.`,
+          hotspots:[], damageText:"FALSO ALARME! A mensagem é informativa e orienta a usar canais oficiais.",
+          actions:["Confirme se a consulta existe nos seus registros.","Não use números ou links suspeitos para compartilhar dados."]
+        }
+      ],
+      "Difícil": [
+        {
+          id: 15,
+          level: "Difícil",
+          category: "CEO Fraud / Business Email Compromise",
+          channel: "email",
+          isPhishing: true,
+          sender: "c.silva.diretor@bancohorizonte-executivo.example",
+          subject: "Urgente: Transferência sigilosa para aquisição estratégica",
+          content: `Olá,<br><br>
+          Estou em reunião com o conselho e preciso que você realize uma transferência via TED no valor de R$ 45.000,00 para o fornecedor parceiro.<br>
+          <span class="hotspot" data-id="1">Trata-se de operação sigilosa de aquisição. Não comente com outros gerentes até o fechamento.</span><br>
+          Dados da conta em anexo.<br><br>
+          Carlos Silva<br>Diretor Executivo`,
+          technicalHeaders: "Return-Path: <reply@bancohorizonte-executivo.example>\nSPF: Fail (IP 198.51.100.99)\nDKIM: Fail",
+          hotspots: [
+            { id: "1", text: "Pedido de sigilo e urgência do Diretor", explanation: "CEO Fraud: golpistas se passam por diretores para burlar processos normais de aprovação financeira usando pressão hierárquica." }
+          ],
+          damageText: "FRAUDE FINANCEIRA CORPORATIVA CONCRETIZADA! A empresa sofreu prejuízo de R$ 45.000,00.",
+          actions: [
+            "Acione o setor jurídico e de compliance do banco imediatamente.",
+            "Confirme ordens financeiras de diretores sempre por canal de voz seguro (ligação interna)."
+          ]
+        },
+        {
+          id: 16,
+          level: "Difícil",
+          category: "Falso Leilão de Veículos",
+          channel: "email",
+          isPhishing: true,
+          sender: "contato@detran-sp-leiloes-oficial.example",
+          subject: "Arremate em Leilão: Veículo quitado com 70% de desconto",
+          content: `Prezado cidadão,<br><br>
+          Você foi habilitado para participar do Grande Leilão Online do Detran.<br>
+          <span class="hotspot" data-id="1">Para garantir o lote arrematado, efetue o depósito de caução via Pix em até 2 horas.</span><br>
+          Acesse o portal homologado: <span class="hotspot" data-id="2">http://detran-sp-leiloes.example</span>`,
+          technicalHeaders: "Return-Path: <admin@detran-sp-leiloes.example>\nSPF: Neutral\nDKIM: None",
+          hotspots: [
+            { id: "1", text: "Exigência de caução rápida via Pix", explanation: "Leilões oficiais do governo exigem pagamento de taxas via DAE (Documento de Arrecadação Estadual), nunca Pix para contas de pessoas físicas." },
+            { id: "2", text: "Domínio falso (.example)", explanation: "Órgãos governamentais utilizam exclusivamente a extensão oficial '.gov.br'." }
+          ],
+          damageText: "GOLPE DO LEILÃO FALSO! Você perdeu o valor da caução e o veículo nunca existiu.",
+          actions: [
+            "Registre Boletim de Ocorrência policial detalhando a chave Pix receptora.",
+            "Acione o MED no seu banco para tentar reaver os valores transferidos."
+          ]
+        },
+        {
+          id: 17,
+          level: "Difícil",
+          category: "Atualização de Token de Segurança",
+          channel: "sms",
+          isPhishing: true,
+          sender: "SEG-BANCO",
+          content: `BANCO HORIZONTE: Certificado de Seguranca do seu Token expirou.<br>
+          <span class="hotspot" data-id="1">Sua conta sera bloqueada preventivamente se nao atualizar o dispositivo fisico/digital agora:</span><br>
+          <span class="hotspot" data-id="2">http://bancohorizonte-token-atualiza.example</span>`,
+          hotspots: [
+            { id: "1", text: "Ameaça de bloqueio preventivo", explanation: "Tática de coerção psicológica para forçar a vítima a agir sem pensar." },
+            { id: "2", text: "Link de atualização de token por SMS", explanation: "Tokens de segurança nunca são atualizados por links externos enviados por SMS." }
+          ],
+          damageText: "ROUBO DE TOKEN E SENHA BANCÁRIA! Criminosos esvaziaram suas economias em minutos.",
+          actions: [
+            "Entre em contato com o suporte oficial do seu banco imediatamente por telefone.",
+            "Bloqueie o acesso mobile e altere senhas de computadores conectados."
+          ]
+        },
+        {
+          id: 18,
+          level: "Difícil",
+          category: "Notificação da Receita Federal Real",
+          channel: "email",
+          isPhishing: false,
+          sender: "nao-responda@receita.economia.gov.br",
+          subject: "Comprovante de Declaração de Imposto de Renda Processada",
+          content: `Prezado contribuinte,<br><br>
+          Informamos que a Declaração de Ajuste Anual do Imposto de Renda foi processada com sucesso.<br>
+          Nenhuma pendência foi encontrada em sua malha fiscal.<br>
+          Consulte o extrato completo acessando o e-CAC no portal oficial gov.br.<br><br>
+          Receita Federal do Brasil`,
+          technicalHeaders: "Return-Path: <nao-responda@receita.economia.gov.br>\nSPF: Pass (domain gov.br verified)\nDKIM: 'OK' with domain receita.economia.gov.br",
+          hotspots: [],
+          damageText: "FALSO ALARME! E-mail oficial legítimo da Receita Federal.",
+          actions: ["Órgãos públicos oficiais usam domínios governamentais (.gov.br) e não cobram taxas por links em e-mails."]
+        },
+        {
+          id: 19,
+          level: "Difícil",
+          category: "Falso Investimento em Criptomoedas",
+          channel: "whatsapp",
+          isPhishing: true,
+          sender: "+55 11 94444-3322",
+          avatarText: "INV",
+          content: `Parabéns! Você foi selecionado para o Clube de Investimentos Elite Crypto Horizonte.<br>
+          <span class="hotspot" data-id="1">Garantimos rentabilidade fixa de 15% ao dia em operações automatizadas.</span><br>
+          <span class="hotspot" data-id="2">Faça seu primeiro depósito via Pix na carteira oficial da plataforma.</span>`,
+          chatOptions: [
+            { label: "Tem garantia?", reply: "15% ao dia garantido em contrato!", response: "Promessas de lucro garantido e absurdo são indícios inequip必备 de esquema de pirâmide/golpe." }
+          ],
+          hotspots: [
+            { id: "1", text: "Promessa de rentabilidade irreal (15% ao dia)", explanation: "Nenhum investimento legalizado no mundo garante lucros fixos diários dessa magnitude." },
+            { id: "2", text: "Depósito via Pix para carteira desconhecida", explanation: "Transações para criptoativos sem corretora regulamentada resultam em perda definitiva de capital." }
+          ],
+          damageText: "PERDA TOTAL DE CAPITAL! O investimento era um esquema fraudulento de pirâmide financeira.",
+          actions: [
+            "Interrompa qualquer depósito adicional.",
+            "Denuncie a chave Pix e o contato na plataforma de mensagens."
+          ]
+        },
+        {
+          id: 20,
+          level: "Difícil",
+          category: "Erro Sutil de Chave Pix Empresarial",
+          channel: "whatsapp",
+          isPhishing: true,
+          sender: "+55 11 93333-1111",
+          avatarText: "FORN",
+          content: `Prezado parceiro, alteramos nossa chave Pix CNPJ para pagamento da fatura deste mês devido a manutenção em nossa conta principal.<br>
+          <span class="hotspot" data-id="1">Nova Chave Pix CNPJ: 00.123.456/0001-99 (Banco PagFácil Instituição de Pagamento).</span><br>
+          <span class="hotspot" data-id="2">Favor enviar comprovante por aqui.</span>`,
+          chatOptions: [
+            { label: "Qual o motivo da troca?", reply: "Manutenção programada na matriz.", response: "Golpista tenta justificar a alteração de dados bancários." }
+          ],
+          hotspots: [
+            { id: "1", text: "Alteração surpresa de dados bancários de fornecedor", explanation: "Fraude de alteração de boleto/Pix: criminosos interceptam e-mails comerciais ou fingem ser fornecedores para desviar pagamentos." },
+            { id: "2", text: "Solicitação de comprovante por WhatsApp particular", explanation: "Empresas sérias validam alterações cadastrais por chamados oficiais e contratos aditivos." }
+          ],
+          damageText: "DESVIO DE PAGAMENTO CORPORATIVO! O dinheiro da fatura foi enviado para a conta de criminosos.",
+          actions: [
+            "Ligue imediatamente para o telefone fixo oficial do fornecedor para confirmar a alteração.",
+            "Acione o MED no seu banco para tentar barrar o Pix."
+          ]
+        },
+        {
+          id: 29, level: "Difícil", category: "Falso pedido de redefinição de senha", channel: "email",
+          isPhishing: true, sender: "security@conta-verificacao.example", subject: "Solicitação de redefinição detectada",
+          content: `Recebemos um pedido de redefinição de senha.<br><span class="hotspot" data-id="1">Se não foi você, acesse imediatamente o painel de proteção.</span><br><span class="hotspot" data-id="2">A página solicita senha atual e código de autenticação.</span>`,
+          technicalHeaders:"Return-Path: <security@conta-verificacao.example>\nSPF: Fail\nDKIM: None",
+          chatOptions:[
+            {label:"Abrir o painel do e-mail",reply:"Vou verificar minha conta diretamente.",response:"Boa escolha: entre pelo aplicativo ou endereço oficial, sem usar o link recebido."},
+            {label:"Preencher os dados no link",reply:"Vou confirmar minha senha e código.",response:"Isso pode entregar tanto a senha quanto o segundo fator a um invasor."},
+            {label:"Verificar sessões e trocar senha",reply:"Vou conferir os acessos no site oficial.",response:"Correto! Se houver atividade desconhecida, encerre sessões e troque a senha."}
+          ],
+          hotspots:[{id:"1",text:"Urgência para abrir link",explanation:"A mensagem usa medo para fazer você clicar antes de verificar."},{id:"2",text:"Senha e código solicitados juntos",explanation:"Credenciais e códigos de autenticação não devem ser enviados a páginas inesperadas."}],
+          damageText:"TENTATIVA DE TOMADA DE CONTA! A página poderia capturar senha e código temporário.",
+          actions:["Entre pelo endereço oficial.","Troque a senha e encerre sessões desconhecidas se suspeitar de acesso indevido."]
+        },
+        {
+          id: 30, level: "Difícil", category: "Falso contato de fornecedor", channel: "email",
+          isPhishing: true, sender: "financeiro@fornecedor-horizonte.example", subject: "Atualização bancária para próxima fatura",
+          content: `Prezada equipe,<br>Por uma mudança administrativa, os próximos pagamentos devem ser enviados para uma nova conta.<br><span class="hotspot" data-id="1">Desconsidere os dados bancários anteriores.</span><br><span class="hotspot" data-id="2">A alteração deve permanecer confidencial até o fechamento.</span>`,
+          technicalHeaders:"Return-Path: <financeiro@fornecedor-horizonte.example>\nSPF: SoftFail\nDKIM: Fail",
+          chatOptions:[
+            {label:"Atualizar cadastro imediatamente",reply:"Vamos alterar os dados.",response:"Uma mudança inesperada pode desviar pagamentos para criminosos."},
+            {label:"Confirmar com contato já cadastrado",reply:"Ligarei para o número conhecido do fornecedor.",response:"Excelente! Confirme alterações financeiras por um canal previamente verificado."},
+            {label:"Pedir aprovação interna",reply:"Vou seguir o procedimento de aprovação.",response:"Correto: mudanças bancárias devem seguir controles internos e validação independente."}
+          ],
+          hotspots:[{id:"1",text:"Mudança inesperada de conta",explanation:"Fraudes de fornecedor tentam redirecionar pagamentos legítimos."},{id:"2",text:"Pedido de confidencialidade",explanation:"O sigilo é usado para impedir que outra pessoa confirme a solicitação."}],
+          damageText:"PAGAMENTO DESVIADO! A fatura poderia ser paga para uma conta controlada por criminosos.",
+          actions:["Confirme alterações com um telefone previamente registrado.","Exija aprovação por mais de uma pessoa para pagamentos relevantes."]
+        },
+        {
+          id: 31, level: "Difícil", category: "Falso alerta de autenticação", channel: "whatsapp",
+          isPhishing: true, sender: "+55 21 95555-0099", avatarText: "TI",
+          content: `Equipe de segurança: identificamos atividade incomum.<br><span class="hotspot" data-id="1">Instale este aplicativo de suporte remoto para corrigirmos o problema.</span><br><span class="hotspot" data-id="2">Mantenha o aplicativo aberto e aceite todas as permissões.</span>`,
+          chatOptions:[
+            {label:"Instalar o aplicativo",reply:"Vou instalar para resolver.",response:"Aplicativos de acesso remoto podem permitir que outra pessoa veja ou controle o dispositivo."},
+            {label:"Contactar o suporte conhecido",reply:"Vou abrir chamado pelo canal oficial.",response:"Correto! Não instale ferramentas de acesso remoto por solicitação inesperada."},
+            {label:"Pedir identificação e protocolo",reply:"Qual é o protocolo do chamado?",response:"Uma resposta convincente não prova identidade; confirme usando o canal oficial."}
+          ],
+          hotspots:[{id:"1",text:"Instalação de acesso remoto inesperada",explanation:"Criminosos podem usar ferramentas legítimas de suporte para obter controle do dispositivo."},{id:"2",text:"Permissões amplas",explanation:"Permissões excessivas podem expor arquivos e contas."}],
+          damageText:"DISPOSITIVO EXPOSTO! O acesso remoto poderia permitir visualização de informações privadas.",
+          actions:["Não instale ferramentas a pedido de contatos não verificados.","Se já instalou, desconecte o acesso e procure suporte técnico confiável."]
+        },
+        {
+          id: 32, level: "Difícil", category: "Convite corporativo legítimo", channel: "email",
+          isPhishing: false, sender: "reunioes@empresa.exemplo.br", subject: "Convite para reunião de equipe",
+          content: `Olá, equipe.<br>Você foi convidado para a reunião semanal de acompanhamento.<br>O convite inclui data, horário, pauta e organizador identificável.<br>Para consultar os detalhes, abra o calendário corporativo pelo aplicativo habitual.`,
+          technicalHeaders:"Return-Path: <reunioes@empresa.exemplo.br>\nSPF: Pass\nDKIM: OK",
+          hotspots:[], damageText:"FALSO ALARME! O convite orienta a consultar o calendário corporativo habitual.",
+          actions:["Confira se o organizador e o evento são reconhecidos.","Mesmo em mensagens aparentemente legítimas, evite fornecer senhas por links inesperados."]
+        }
+      ]
+    };
+
+    /* ESTADO GLOBAL DO JOGO */
+    let currentDifficulty = "Fácil";
+    let currentScenarioIndex = 0;
+    let activeScenariosList = [];
+    let score = 0;
+    let timerInterval = null;
+    let secondsElapsed = 0;
+    let foundHotspotsCount = 0;
+    let totalHotspotsInScenario = 0;
+    let currentScenarioData = null;
+    let sessionHistory = [];
+    let categoryErrors = {};
+
+    /* ELEMENTOS DOM */
+    const screenIntro = document.getElementById("screen-intro");
+    const screenGame = document.getElementById("screen-game");
+    const screenReport = document.getElementById("screen-report");
+    const hudLevel = document.getElementById("hud-level");
+    const hudScore = document.getElementById("hud-score");
+    const hudTimer = document.getElementById("hud-timer");
+    const hudProgressText = document.getElementById("hud-progress-text");
+    const hudProgressFill = document.getElementById("hud-progress-fill");
+    const appFrameContainer = document.getElementById("app-frame-container");
+    const btnMarkPhishing = document.getElementById("btn-mark-phishing");
+    const btnMarkLegit = document.getElementById("btn-mark-legit");
+    const btnHint = document.getElementById("btn-hint");
+    const btnStart = document.getElementById("btn-start");
+    const btnRestart = document.getElementById("btn-restart");
+    const modalExplanation = document.getElementById("modal-explanation");
+    const modalExplanationText = document.getElementById("modal-explanation-text");
+    const btnCloseModal = document.getElementById("btn-close-modal");
+    const breachOverlay = document.getElementById("breach-overlay");
+    const breachDamageText = document.getElementById("breach-damage-text");
+    const breachActionList = document.getElementById("breach-action-list");
+    const btnCloseBreach = document.getElementById("btn-close-breach");
+
+    /* SELEÇÃO DE DIFICULDADE */
+    function selectDifficulty(diff) {
+      currentDifficulty = diff;
+      document.querySelectorAll(".diff-card").forEach(card => {
+        card.classList.remove("selected");
+        if(card.getAttribute("data-diff") === diff) {
+          card.classList.add("selected");
+        }
+      });
+    }
+
+    document.querySelectorAll(".diff-card").forEach(card => {
+      card.addEventListener("click", () => {
+        selectDifficulty(card.getAttribute("data-diff"));
+      });
+    });
+
+    /* INICIALIZAÇÃO DO JOGO */
+    btnStart.addEventListener("click", () => {
+      activeScenariosList = allScenarios[currentDifficulty];
+      currentScenarioIndex = 0;
+      score = 0;
+      secondsElapsed = 0;
+      categoryErrors = {};
+      
+      screenIntro.classList.remove("active");
+      screenReport.classList.remove("active");
+      screenGame.classList.add("active");
+
+      hudLevel.innerText = currentDifficulty.toUpperCase();
+      
+      startTimer();
+      loadScenario();
+    });
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      secondsElapsed = 0;
+      timerInterval = setInterval(() => {
+        secondsElapsed++;
+        let mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+        let secs = (secondsElapsed % 60).toString().padStart(2, '0');
+        hudTimer.innerText = `${mins}:${secs}`;
+      }, 1000);
+    }
+
+    /* CARREGAMENTO DE CENÁRIO */
+    function loadScenario() {
+      if (currentScenarioIndex >= activeScenariosList.length) {
+        endGame();
+        return;
+      }
+
+      currentScenarioData = activeScenariosList[currentScenarioIndex];
+      hudProgressText.innerText = `${currentScenarioIndex + 1} / ${activeScenariosList.length}`;
+      let progressPct = ((currentScenarioIndex) / activeScenariosList.length) * 100;
+      hudProgressFill.style.width = `${progressPct}%`;
+
+      foundHotspotsCount = 0;
+      totalHotspotsInScenario = currentScenarioData.hotspots.length;
+
+      renderAppFrame();
+    }
+
+    /* Avatares locais gerados em SVG: funcionam sem internet e variam por contato. */
+    function avatarData(label, channel) {
+      const palettes = channel === "whatsapp" ? ["#075e54", "#4776a8", "#8b5e83", "#6c7d47"] :
+                       channel === "sms" ? ["#4267a9", "#607d8b", "#8d6e63", "#6d7194"] :
+                       ["#5f6368", "#3f6b8a", "#7a6090", "#607d65"];
+      const str = String(label || "Contato");
+      const hash = [...str].reduce((n, c) => n + c.charCodeAt(0), 0);
+      const bg = palettes[hash % palettes.length];
+      const initials = (str.replace(/[^A-Za-zÀ-ÿ0-9 ]/g, " ").trim().split(/\s+/).slice(0,2).map(x=>x[0]||"").join("") || "?").toUpperCase();
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="48" fill="${bg}"/><circle cx="48" cy="35" r="17" fill="#f0f2f3" opacity=".95"/><path d="M16 88c2-21 15-32 32-32s30 11 32 32" fill="#f0f2f3" opacity=".95"/><text x="48" y="91" text-anchor="middle" font-family="Arial" font-size="1" fill="white">${initials}</text></svg>`;
+      return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+    }
+
+    const threadContinuations = {
+      1: "A chave está no nome de outra pessoa, mas preciso resolver isso logo. Você consegue transferir agora?",
+      2: "O aviso diz que o pacote será devolvido se a taxa não for paga hoje. O rastreio deve ser conferido no site oficial dos Correios.",
+      3: "A taxa seria para liberar o prêmio. Uma promoção verdadeira deve poder ser confirmada no perfil ou site oficial da empresa.",
+      7: "A mensagem promete ativar os dados depois do cadastro. Confira a oferta diretamente no aplicativo oficial da operadora.",
+      11: "A empresa diz que a taxa é necessária antes da entrevista. Uma vaga legítima pode ser confirmada por canais oficiais de recrutamento.",
+      12: "O remetente insiste que você use o endereço enviado para cancelar a operação. Abra o aplicativo do banco por conta própria para conferir.",
+      13: "Se precisar remarcar, use o telefone que aparece no comprovante da consulta. Não é necessário enviar dados pessoais por mensagem.",
+      19: "Prometem liberar os ganhos assim que você fizer o depósito. Retornos garantidos e pagamento antecipado merecem verificação independente.",
+      20: "A mensagem pede que o pagamento seja feito para uma nova chave. Confirme a alteração com o fornecedor usando um contato já conhecido.",
+      21: "O contato diz que o código mantém a conta ativa. Códigos de verificação são pessoais e não devem ser compartilhados.",
+      22: "A oferta expira em poucos minutos, segundo o remetente. Confira a promoção em um canal oficial antes de fornecer dados.",
+      27: "O remetente afirma que a encomenda ficará retida até o pagamento. Confira o pedido no site oficial da transportadora.",
+      28: "O agendamento pode ser consultado no portal oficial ou pelo número do comprovante. A mensagem não pede senha nem pagamento.",
+      31: "O contato pede acesso remoto ao aparelho para concluir a verificação. Confirme a solicitação com a equipe de TI por um canal já conhecido."
+    };
+
+    function getThreadContinuation() {
+      return threadContinuations[currentScenarioData.id] || (currentScenarioData.isPhishing
+        ? "O remetente pede que você aja rapidamente. Antes de clicar ou enviar informações, confirme a solicitação por um canal oficial."
+        : "Se tiver dúvidas, confirme os detalhes no aplicativo ou site oficial acessado por conta própria.");
+    }
+
+    function buildThreadChoices() {
+      const data = currentScenarioData;
+      const existing = data.chatOptions || [];
+      // Reaproveita respostas específicas do cenário quando disponíveis, mas transforma-as em escolhas dentro da conversa.
+      const normalized = existing.slice(0, 2).map((o) => {
+        const combined = `${o.label} ${o.reply}`;
+        const branch = /vou fazer|pagar|clicar|abrir o link|enviar o código|enviar meus dados|manda o comprovante|pague o frete|entrar agora/i.test(combined)
+          ? "risky"
+          : /oficial|verificar|confirmar|não vou|nao vou|denunciar|bloquear|ignorar|conferir/i.test(combined)
+            ? "safe" : "question";
+        return { label: o.label, reply: o.reply, branch };
+      });
+      const safe = {label:"Vou confirmar por um canal oficial", reply:"Vou confirmar isso pelo aplicativo, site ou telefone oficial antes de fazer qualquer coisa.", branch:"safe"};
+      const verify = {label:"Pode explicar melhor?", reply:"Pode explicar melhor o motivo dessa solicitação?", branch:"question"};
+      if (!normalized.some(o => /oficial|confirm|não vou|nao vou|denunciar|bloquear|verificar/i.test(o.label))) normalized.push(safe);
+      if (normalized.length < 2) normalized.push(verify);
+      return normalized.slice(0, 3);
+    }
+
+    function appendThreadBubble(channel, text, isUser=false) {
+      const body = document.getElementById(channel === "whatsapp" ? "wa-chat-body" : "sms-chat-body");
+      if (!body) return;
+      const bubble = document.createElement("div");
+      bubble.className = channel === "whatsapp" ? "wa-bubble" + (isUser ? " user-reply" : "") : "sms-bubble" + (isUser ? " user-reply" : "");
+      bubble.appendChild(document.createTextNode(text));
+      if (channel === "whatsapp") {
+        const meta = document.createElement("span"); meta.className="wa-meta"; meta.textContent = isUser ? "13:49 ✓✓" : "13:50"; bubble.appendChild(meta);
+      }
+      body.appendChild(bubble);
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function renderThreadChoices(channel) {
+      const panel = document.getElementById("thread-choice-panel");
+      if (!panel) return;
+      const data = currentScenarioData;
+      const choices = data.isPhishing ? [
+        {label:"Por que precisa ser feito com tanta urgência?", reply:"Por que precisa ser feito com tanta urgência?", kind:"question"},
+        {label:"Vou conferir pelo canal oficial primeiro.", reply:"Vou conferir pelo canal oficial primeiro.", kind:"safe"},
+        {label:"Tudo bem, vou seguir as instruções.", reply:"Tudo bem, vou seguir as instruções.", kind:"risky"}
+      ] : [
+        {label:"Certo, obrigado pelo aviso.", reply:"Certo, obrigado pelo aviso.", kind:"ack"},
+        {label:"Onde posso confirmar essa informação?", reply:"Onde posso confirmar essa informação?", kind:"question"},
+        {label:"Vou consultar o aplicativo ou site oficial.", reply:"Vou consultar o aplicativo ou site oficial.", kind:"official"}
+      ];
+      panel.dataset.used = "no";
+      panel.dataset.followUsed = "no";
+      panel.innerHTML = `<div class="thread-choice-title">Escolha sua resposta:</div><div class="thread-choice-buttons">${choices.map((o,i)=>`<button type="button" class="thread-choice-btn" data-sender-choice="${i}">${o.label}</button>`).join("")}</div>`;
+      panel.querySelectorAll("button[data-sender-choice]").forEach(button => {
+        button.addEventListener("click", () => {
+          if (panel.dataset.used === "yes") return;
+          panel.dataset.used = "yes";
+          const chosen = choices[Number(button.dataset.senderChoice)];
+          // A mensagem escolhida pelo jogador aparece à direita; a resposta do contato aparece à esquerda.
+          appendThreadBubble(channel, chosen.reply, true);
+          let senderReply = "";
+          if (data.isPhishing) {
+            if (chosen.kind === "question") {
+              senderReply = "É um procedimento urgente e não dá para resolver por outro canal. Preciso que você faça isso agora.";
+            } else if (chosen.kind === "safe") {
+              senderReply = "Não precisa entrar em outro aplicativo. Use o endereço que enviei para terminar mais rápido.";
+            } else {
+              senderReply = "Ótimo. Siga o link e conclua as etapas; depois me avise quando terminar.";
+            }
+          } else {
+            if (chosen.kind === "question") {
+              senderReply = "Você pode conferir os detalhes no aplicativo ou site oficial da instituição. Não precisa usar nenhum link desta mensagem.";
+            } else if (chosen.kind === "official") {
+              senderReply = "Perfeito. Lá você encontrará as mesmas informações e poderá confirmar se há alguma ação necessária.";
+            } else {
+              senderReply = "Por nada! Se precisar de mais informações, consulte os canais oficiais de atendimento.";
+            }
+          }
+          window.setTimeout(() => {
+            appendThreadBubble(channel, senderReply, false);
+            const followChoices = data.isPhishing ? [
+              {label:"Vou verificar por outro canal.", reply:"Vou verificar por outro canal antes de continuar.", kind:"safe"},
+              {label:"Não vou compartilhar dados nem códigos.", reply:"Não vou compartilhar dados nem códigos por mensagem.", kind:"safe"},
+              {label:"Vou concluir agora.", reply:"Vou concluir agora.", kind:"risky"}
+            ] : [
+              {label:"Obrigado, vou conferir.", reply:"Obrigado, vou conferir.", kind:"safe"},
+              {label:"Entendi, não preciso fazer mais nada.", reply:"Entendi, não preciso fazer mais nada.", kind:"safe"},
+              {label:"Vou entrar no canal oficial.", reply:"Vou entrar no canal oficial para confirmar.", kind:"safe"}
+            ];
+            panel.innerHTML = `<div class="thread-choice-title">Escolha como responder:</div><div class="thread-choice-buttons">${followChoices.map((o,i)=>`<button type="button" class="thread-choice-btn" data-follow-choice="${i}">${o.label}</button>`).join("")}</div>`;
+            panel.querySelectorAll("button[data-follow-choice]").forEach(nextButton => nextButton.addEventListener("click", () => {
+              if (panel.dataset.followUsed === "yes") return;
+              panel.dataset.followUsed = "yes";
+              const follow = followChoices[Number(nextButton.dataset.followChoice)];
+              appendThreadBubble(channel, follow.reply, true);
+              let finalReply;
+              if (data.isPhishing) {
+                finalReply = follow.kind === "risky"
+                  ? "Certo, estou aguardando. Envie os dados ou confirme assim que terminar."
+                  : "Você precisa fazer isso por aqui mesmo. Se sair da conversa, talvez não consiga concluir a solicitação a tempo.";
+              } else {
+                finalReply = "Tudo bem. Confira as informações com calma e use somente o aplicativo, site ou telefone oficial.";
+              }
+              window.setTimeout(() => {
+                appendThreadBubble(channel, finalReply, false);
+                panel.innerHTML = `<div class="thread-system-note">Fim da conversa. Agora classifique a mensagem: golpe ou legítima.</div>`;
+              }, 180);
+            }));
+          }, 180);
+        });
+      });
+    }
+
+    /* RENDERIZAÇÃO DA MOLDURA DO APLICATIVO (WHATSAPP, SMS, EMAIL, BANCO) */
+    function renderAppFrame() {
+      appFrameContainer.innerHTML = "";
+
+      if (currentScenarioData.channel === "whatsapp") {
+        appFrameContainer.innerHTML = `
+          <div class="frame-whatsapp">
+            <div class="wa-appbar"><span>13:47</span><span>▮▮▮ &nbsp; Wi-Fi &nbsp; ▰</span></div>
+            <div class="wa-header">
+              <div class="wa-back">‹</div>
+              <img class="wa-avatar" alt="Foto do contato" src="${avatarData(currentScenarioData.avatarText || currentScenarioData.sender, 'whatsapp')}">
+              <div style="flex:1;min-width:0;">
+                <div style="font-weight:600;font-size:.92rem;overflow-wrap:anywhere;">${currentScenarioData.sender}</div>
+                <div style="font-size:.72rem;color:#aebac1;margin-top:3px;">online</div>
+              </div>
+              <div style="color:#aebac1;font-size:1.15rem;display:flex;gap:15px;align-items:center;"><span>▣</span><span>☎</span><span>⋮</span></div>
+            </div>
+            <div id="wa-chat-body" class="wa-body">
+              <div class="wa-date-pill">HOJE</div>
+              <div class="wa-bubble" id="main-message-bubble">${currentScenarioData.content}<span class="wa-meta">13:47</span></div>
+              <div class="wa-bubble">${getThreadContinuation()}<span class="wa-meta">13:48</span></div>
+            </div>
+            <div id="thread-choice-panel" class="thread-choice-panel"></div>
+            <div class="wa-composer"><span style="font-size:1.25rem;">☺</span><div class="wa-compose-field">Mensagem</div><span style="font-size:1.15rem;">📎</span><span style="font-size:1.05rem;">▣</span><div class="wa-mic">🎙</div></div>
+          </div>
+        `;
+      } 
+      else if (currentScenarioData.channel === "sms") {
+        appFrameContainer.innerHTML = `
+          <div class="frame-sms">
+            <div class="sms-header"><div style="font-size:.72rem;color:#777;margin-bottom:5px;">MENSAGENS · SMS</div><div class="sms-contact-line"><img class="contact-avatar-img" alt="Ícone do remetente" src="${avatarData(currentScenarioData.sender, 'sms')}"><span>‹ &nbsp; ${currentScenarioData.sender}</span></div></div>
+            <div id="sms-chat-body" class="sms-body">
+              <div class="sms-bubble" id="main-message-bubble">${currentScenarioData.content}</div>
+              <div class="sms-bubble">${getThreadContinuation()}</div>
+            </div>
+            <div id="thread-choice-panel" class="thread-choice-panel" style="background:#fff;border-top:1px solid #ddd;"></div>
+          </div>
+        `;
+      } 
+      else if (currentScenarioData.channel === "email") {
+        appFrameContainer.innerHTML = `
+          <div class="frame-email">
+            <div class="email-toolbar"><span>✉ &nbsp; Caixa de entrada</span><span>⋮</span></div>
+            <div class="email-header">
+              <div class="email-subject">${currentScenarioData.subject || "(sem assunto)"}</div>
+              <div class="email-sender-wrap"><img class="contact-avatar-img" alt="Ícone do remetente" src="${avatarData(currentScenarioData.sender, 'email')}"><div class="email-sender-line"><strong>De:</strong> ${currentScenarioData.sender}</div></div>
+              <div style="font-size:.72rem;color:#777;margin-top:4px;">para mim · agora</div>
+              <button id="btn-toggle-headers" class="hud-btn" style="padding: 5px 9px; font-size: 0.7rem; margin-top: 10px;">
+                INSPECIONAR CABEÇALHO TÉCNICO (SPF / DKIM)
+              </button>
+            </div>
+            <div id="tech-headers-box" class="technical-headers-panel">
+              ${currentScenarioData.technicalHeaders || "Nenhum cabeçalho técnico disponível."}
+            </div>
+            <div class="email-body" id="email-message-body">
+              ${currentScenarioData.content}
+            </div>
+            <div id="thread-choice-panel" class="thread-choice-panel" style="background:#f6f8fc;border-top:1px solid #e5e7eb;"></div>
+          </div>
+        `;
+        document.getElementById("btn-toggle-headers").addEventListener("click", () => {
+          document.getElementById("tech-headers-box").classList.toggle("active");
+        });
+      } 
+      else if (currentScenarioData.channel === "bank") {
+        appFrameContainer.innerHTML = `
+          <div class="frame-bank">
+            <div class="browser-bar">
+              <span>🔒 HTTPS://</span>
+              <div class="browser-url">${currentScenarioData.sender}</div>
+            </div>
+            <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 15px;">
+              <div class="bank-content">
+                <div class="bank-logo">BANCO HORIZONTE</div>
+                <div id="fake-browser-warning" class="fake-browser-warning">
+                  ⚠️ ALERTA DO NAVEGADOR: Este site foi reportado como falsificado e pode roubar suas credenciais!
+                </div>
+                <p style="font-size: 0.85rem; margin-bottom: 12px; color: #555;">${currentScenarioData.content}</p>
+                <input type="text" id="bank-user-input" placeholder="Agência e Conta" style="width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <input type="password" id="bank-pass-input" placeholder="Senha Eletrônica" style="width: 100%; padding: 8px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 4px;">
+                <button class="hud-btn" style="width: 100%; background: #003366; color: #fff; border: none; padding: 10px;">ACESSAR CONTA</button>
+              </div>
+            </div>
+          </div>
+        `;
+        // Simulação interativa de digitação disparando alerta de navegador falso
+        const triggerWarning = () => {
+          document.getElementById("fake-browser-warning").style.display = "block";
+        };
+        document.getElementById("bank-user-input").addEventListener("input", triggerWarning);
+        document.getElementById("bank-pass-input").addEventListener("input", triggerWarning);
+      }
+
+      /* Respostas interativas ligadas à mensagem, sem painel genérico de análise. */
+      if (["whatsapp", "sms", "email"].includes(currentScenarioData.channel)) {
+        if (currentScenarioData.channel === "email") {
+          const panel = document.getElementById("thread-choice-panel");
+          if (panel) {
+            panel.innerHTML = `<div class="thread-choice-title" style="color:#5f6368">Como deseja continuar?</div><div class="thread-choice-buttons"><button type="button" class="thread-choice-btn" data-email-action="reply" style="background:#fff;color:#202124">Responder ao remetente</button><button type="button" class="thread-choice-btn" data-email-action="verify" style="background:#fff;color:#202124">Conferir por canal oficial</button><button type="button" class="thread-choice-btn" data-email-action="report" style="background:#fff;color:#202124">Denunciar mensagem</button></div>`;
+            panel.querySelectorAll("button").forEach(btn => btn.addEventListener("click", () => {
+              if (panel.dataset.used === "yes") return;
+              panel.dataset.used = "yes";
+              const body = document.getElementById("email-message-body");
+              const note = document.createElement("div");
+              note.style.cssText = "margin-top:16px;padding:12px;border-top:1px solid #ddd;background:#f8f9fa;color:#202124;line-height:1.5";
+              const action = btn.dataset.emailAction;
+              if (action === "reply") note.innerHTML = "<strong>Rascunho de resposta:</strong><br>Olá, vou confirmar essa solicitação por um canal oficial antes de realizar qualquer ação.";
+              else if (action === "verify") note.innerHTML = "<strong>Verificação:</strong><br>Abra o site ou aplicativo oficial digitando o endereço por conta própria; não use os links desta mensagem.";
+              else note.innerHTML = currentScenarioData.isPhishing ? "<strong>Mensagem sinalizada.</strong><br>O conteúdo apresenta sinais que justificam denúncia e verificação independente." : "<strong>Antes de denunciar:</strong><br>Confira o remetente e valide a comunicação no canal oficial da instituição.";
+              body.appendChild(note);
+              panel.innerHTML = `<div class="thread-system-note" style="background:#eef2f7;color:#4b5563">Escolha registrada. Agora classifique a mensagem como golpe ou legítima.</div>`;
+            }));
+          }
+        } else {
+          renderThreadChoices(currentScenarioData.channel);
+        }
+      }
+
+      /* Ativar cliques nos Hotspots */
+      document.querySelectorAll(".hotspot").forEach(spot => {
+        spot.addEventListener("click", (e) => {
+          e.stopPropagation();
+          let spotId = spot.getAttribute("data-id");
+          let hotspotObj = currentScenarioData.hotspots.find(h => h.id === spotId);
+          if (hotspotObj && !spot.classList.contains("found")) {
+            spot.classList.add("found");
+            foundHotspotsCount++;
+            score += 30;
+            updateHudScore();
+            showModalExplanation(hotspotObj.explanation);
+          }
+        });
+      });
+    }
+
+    /* As mensagens de WhatsApp e SMS são exibidas como uma sequência contextual, sem escolhas de análise artificiais. */
+
+    function updateHudScore() {
+      hudScore.innerText = `${score} PTS`;
+    }
+
+    /* MODAL DE EXPLICAÇÃO */
+    function showModalExplanation(text) {
+      modalExplanationText.innerText = text;
+      modalExplanation.classList.add("active");
+    }
+
+    btnCloseModal.addEventListener("click", () => {
+      modalExplanation.classList.remove("active");
+    });
+
+    /* BOTÕES DE DECISÃO */
+    btnMarkPhishing.addEventListener("click", () => {
+      processUserDecision(true);
+    });
+
+    btnMarkLegit.addEventListener("click", () => {
+      processUserDecision(false);
+    });
+
+    function processUserDecision(userChosePhishing) {
+      let isActuallyPhishing = currentScenarioData.isPhishing;
+
+      if (userChosePhishing === isActuallyPhishing) {
+        // Acertou
+        score += 100;
+        updateHudScore();
+        nextScenario();
+      } else {
+        // Errou
+        score = Math.max(0, score - 50);
+        updateHudScore();
+        
+        // Registrar erro por categoria
+        let cat = currentScenarioData.category;
+        categoryErrors[cat] = (categoryErrors[cat] || 0) + 1;
+
+        if (isActuallyPhishing) {
+          // Caiu no golpe -> Modo Consequência
+          showBreachOverlay();
+        } else {
+          // Era legítima mas marcou como golpe
+          alert("Atenção: Esta comunicação era legítima! Você recusou uma comunicação oficial.");
+          nextScenario();
+        }
+      }
+    }
+
+    function nextScenario() {
+      currentScenarioIndex++;
+      loadScenario();
+    }
+
+    /* MODO CONSEQUÊNCIA */
+    function showBreachOverlay() {
+      breachDamageText.innerText = currentScenarioData.damageText;
+      breachActionList.innerHTML = "";
+      currentScenarioData.actions.forEach(action => {
+        let li = document.createElement("li");
+        li.innerText = action;
+        breachActionList.appendChild(li);
+      });
+      breachOverlay.classList.add("active");
+    }
+
+    btnCloseBreach.addEventListener("click", () => {
+      breachOverlay.classList.remove("active");
+      nextScenario();
+    });
+
+    /* SISTEMA DE DICA */
+    btnHint.addEventListener("click", () => {
+      score = Math.max(0, score - 50);
+      updateHudScore();
+      if (currentScenarioData.hotspots.length > 0) {
+        let unfound = currentScenarioData.hotspots.find(h => {
+          let el = document.querySelector(`[data-id="${h.id}"]`);
+          return el && !el.classList.contains("found");
+        });
+        if (unfound) {
+          showModalExplanation(`DICA TÁTICA: Procure por "${unfound.text}". Motivo: ${unfound.explanation}`);
+        } else {
+          showModalExplanation("DICA TÁTICA: Todos os sinais óbvios já foram descobertos!");
+        }
+      } else {
+        showModalExplanation("DICA TÁTICA: Esta comunicação é legítima e não possui armadilhas.");
+      }
+    });
+
+    /* FIM DE JOGO E RELATÓRIO */
+    function endGame() {
+      clearInterval(timerInterval);
+      screenGame.classList.remove("active");
+      screenReport.classList.add("active");
+
+      document.getElementById("report-score").innerText = `${score} PTS`;
+      
+      let rating = "ESPECIALISTA EM CIBERSEGURANÇA";
+      if (score < 300) rating = "VULNERÁVEL A AMEAÇAS";
+      else if (score < 700) rating = "ANALISTA EM TREINAMENTO";
+      document.getElementById("report-rating").innerText = rating;
+
+      // Maior vulnerabilidade
+      let maxCat = "Nenhuma detectada";
+      let maxErr = 0;
+      for (let cat in categoryErrors) {
+        if (categoryErrors[cat] > maxErr) {
+          maxErr = categoryErrors[cat];
+          maxCat = cat;
+        }
+      }
+      document.getElementById("report-weakness").innerText = maxCat;
+
+      // Salvar no Ranking Local
+      saveRanking(score, rating);
+      renderRanking();
+    }
+
+    function saveRanking(finalScore, rating) {
+      let ranking = JSON.parse(localStorage.getItem("cyber_detect_ranking") || "[]");
+      ranking.push({
+        date: new Date().toLocaleDateString("pt-BR"),
+        level: currentDifficulty,
+        score: finalScore,
+        status: rating
+      });
+      ranking.sort((a, b) => b.score - a.score);
+      ranking = ranking.slice(0, 5); // Top 5
+      localStorage.setItem("cyber_detect_ranking", JSON.stringify(ranking));
+    }
+
+    function renderRanking() {
+      let ranking = JSON.parse(localStorage.getItem("cyber_detect_ranking") || "[]");
+      let tbody = document.getElementById("ranking-body");
+      tbody.innerHTML = "";
+      if (ranking.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Nenhum registro anterior.</td></tr>`;
+        return;
+      }
+      ranking.forEach((item, index) => {
+        let tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>#${index + 1}</td>
+          <td>${item.date}</td>
+          <td>${item.level}</td>
+          <td>${item.score} PTS</td>
+          <td>${item.status}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    btnRestart.addEventListener("click", () => {
+      screenReport.classList.remove("active");
+      screenIntro.classList.add("active");
+    });
+  </script>
+</body>
+</html>
