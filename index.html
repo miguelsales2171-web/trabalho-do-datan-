@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CYBER-DETECT: Simulador Avançado de Phishing</title>
   <style>
-    /* ==========================================================================
-       1. VARIÁVEIS CSS E ESTILOS GLOBAIS (DESIGN HUD CYBERPUNK)
-       ========================================================================== */
     :root {
       --bg-dark: #0a0e17;
       --bg-card: #0d1b2a;
@@ -21,14 +18,15 @@
       --border-color: #415a77;
       --font-mono: 'Consolas', 'Courier New', Courier, monospace;
     }
-
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
       user-select: none;
     }
-
+    input {
+      user-select: text;
+    }
     body {
       background-color: var(--bg-dark);
       color: var(--text-main);
@@ -39,14 +37,12 @@
       justify-content: center;
       align-items: center;
       overflow-x: hidden;
-      background-image: 
+      background-image:
         radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.05) 0%, transparent 80%),
         linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
         linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
       background-size: 100% 100%, 30px 30px, 30px 30px;
     }
-
-    /* Efeito Scanline CRT */
     body::before {
       content: " ";
       display: block;
@@ -58,7 +54,6 @@
       pointer-events: none;
       opacity: 0.4;
     }
-
     #app-container {
       width: 95%;
       max-width: 960px;
@@ -72,8 +67,6 @@
       flex-direction: column;
       position: relative;
     }
-
-    /* Utilitários Visuais */
     .hud-title {
       font-size: 1.35rem;
       color: var(--accent-blue);
@@ -83,7 +76,6 @@
       text-align: center;
       margin-bottom: 15px;
     }
-
     .hud-btn {
       background: transparent;
       color: var(--accent-blue);
@@ -102,14 +94,12 @@
       justify-content: center;
       gap: 10px;
     }
-
     .hud-btn:hover {
       background: var(--accent-blue);
       color: var(--bg-dark);
       box-shadow: 0 0 15px var(--accent-blue);
       transform: translateY(-2px);
     }
-
     .hud-btn-danger {
       color: var(--accent-red);
       border-color: var(--accent-red);
@@ -119,7 +109,6 @@
       color: #fff;
       box-shadow: 0 0 15px var(--accent-red);
     }
-
     .hud-btn-success {
       color: var(--accent-green);
       border-color: var(--accent-green);
@@ -129,7 +118,6 @@
       color: var(--bg-dark);
       box-shadow: 0 0 15px var(--accent-green);
     }
-
     .hud-btn-warning {
       color: var(--accent-yellow);
       border-color: var(--accent-yellow);
@@ -139,27 +127,20 @@
       color: var(--bg-dark);
       box-shadow: 0 0 15px var(--accent-yellow);
     }
-
     .icon {
       width: 18px;
       height: 18px;
       fill: currentColor;
     }
-
     .screen {
       display: none;
       padding: 25px;
       flex-direction: column;
       flex: 1;
     }
-
     .screen.active {
       display: flex;
     }
-
-    /* ==========================================================================
-       2. PAINEL SUPERIOR DE STATUS (HUD HEADER)
-       ========================================================================== */
     #hud-header {
       background: rgba(10, 15, 29, 0.98);
       border-bottom: 2px solid var(--border-color);
@@ -170,24 +151,20 @@
       flex-wrap: wrap;
       gap: 10px;
     }
-
     .hud-metric {
       display: flex;
       flex-direction: column;
     }
-
     .hud-label {
       font-size: 0.75rem;
       color: var(--text-muted);
       text-transform: uppercase;
     }
-
     .hud-value {
       font-size: 1.1rem;
       font-weight: bold;
       color: var(--accent-blue);
     }
-
     .progress-bar-container {
       width: 100%;
       height: 6px;
@@ -195,7 +172,6 @@
       border: 1px solid var(--border-color);
       margin-top: 5px;
     }
-
     .progress-bar-fill {
       height: 100%;
       width: 0%;
@@ -204,16 +180,17 @@
       transition: width 0.3s ease;
     }
 
-    /* ==========================================================================
-       3. TELA INICIAL
-       ========================================================================== */
     #screen-intro {
-      text-align: center;
-      justify-content: center;
-      align-items: center;
-      gap: 20px;
-    }
 
+      text-align: center;
+
+      justify-content: center;
+
+      align-items: center;
+
+      gap: 20px;
+
+    }
     .intro-box {
       background: rgba(27, 38, 59, 0.6);
       border: 1px solid var(--border-color);
@@ -223,7 +200,6 @@
       line-height: 1.6;
       font-size: 0.9rem;
     }
-
     .intro-box h3 {
       color: var(--accent-blue);
       margin-bottom: 10px;
@@ -232,7 +208,6 @@
       gap: 10px;
       font-size: 1rem;
     }
-
     .difficulty-selector {
       display: flex;
       gap: 12px;
@@ -240,7 +215,6 @@
       justify-content: center;
       flex-wrap: wrap;
     }
-
     .diff-card {
       background: var(--bg-card-alt);
       border: 1px solid var(--border-color);
@@ -252,20 +226,14 @@
       flex: 1;
       min-width: 140px;
     }
-
     .diff-card:hover, .diff-card.selected {
       border-color: var(--accent-blue);
       box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
       background: rgba(0, 240, 255, 0.1);
     }
-
     .diff-card.selected h4 {
       color: var(--accent-blue);
     }
-
-    /* ==========================================================================
-       4. MOLDURAS DOS APLICATIVOS SIMULADOS
-       ========================================================================== */
     #app-frame-container {
       flex: 1;
       background: #000;
@@ -278,8 +246,6 @@
       position: relative;
       min-height: 310px;
     }
-
-    /* WhatsApp Simulado — aparência própria do aplicativo */
     .frame-whatsapp {
       background: #0b141a;
       color: #e9edef;
@@ -309,7 +275,11 @@
       gap: 10px;
       border-bottom: 1px solid #2a3942;
     }
-    .wa-back { font-size: 1.35rem; color: #d1d7db; line-height: 1; }
+    .wa-back {
+      font-size: 1.35rem;
+      color: #d1d7db;
+      line-height: 1;
+    }
     .wa-avatar, .contact-avatar-img {
       width: 40px;
       height: 40px;
@@ -320,17 +290,69 @@
       border: 1px solid rgba(255,255,255,.22);
       display: block;
     }
-    .sms-contact-line { display:flex; align-items:center; justify-content:center; gap:9px; }
-    .sms-contact-line .contact-avatar-img { width:34px; height:34px; }
-    .email-sender-wrap { display:flex; align-items:center; gap:9px; margin-top:8px; }
-    .email-sender-wrap .contact-avatar-img { width:36px; height:36px; }
-    .thread-choice-panel { padding:10px 12px; background:#17232b; border-top:1px solid #2a3942; }
-    .thread-choice-title { color:#b7c4cc; font-size:.72rem; margin-bottom:8px; }
-    .thread-choice-buttons { display:flex; flex-wrap:wrap; gap:7px; }
-    .thread-choice-btn { border:1px solid #52636d; background:#263640; color:#e9edef; border-radius:16px; padding:8px 11px; font-size:.76rem; cursor:pointer; text-align:left; }
-    .thread-choice-btn:hover { background:#314954; border-color:#00a884; }
-    .thread-choice-btn:disabled { opacity:.55; cursor:default; }
-    .thread-system-note { align-self:center; color:#b7c4cc; background:#182229; border-radius:8px; padding:6px 10px; font-size:.7rem; text-align:center; max-width:95%; }
+    .sms-contact-line {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:9px;
+    }
+    .sms-contact-line .contact-avatar-img {
+      width:34px;
+      height:34px;
+    }
+    .email-sender-wrap {
+      display:flex;
+      align-items:center;
+      gap:9px;
+      margin-top:8px;
+    }
+    .email-sender-wrap .contact-avatar-img {
+      width:36px;
+      height:36px;
+    }
+    .thread-choice-panel {
+      padding:10px 12px;
+      background:#17232b;
+      border-top:1px solid #2a3942;
+    }
+    .thread-choice-title {
+      color:#b7c4cc;
+      font-size:.72rem;
+      margin-bottom:8px;
+    }
+    .thread-choice-buttons {
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+    }
+    .thread-choice-btn {
+      border:1px solid #52636d;
+      background:#263640;
+      color:#e9edef;
+      border-radius:16px;
+      padding:8px 11px;
+      font-size:.76rem;
+      cursor:pointer;
+      text-align:left;
+    }
+    .thread-choice-btn:hover {
+      background:#314954;
+      border-color:#00a884;
+    }
+    .thread-choice-btn:disabled {
+      opacity:.55;
+      cursor:default;
+    }
+    .thread-system-note {
+      align-self:center;
+      color:#b7c4cc;
+      background:#182229;
+      border-radius:8px;
+      padding:6px 10px;
+      font-size:.7rem;
+      text-align:center;
+      max-width:95%;
+    }
     .wa-body {
       padding: 16px 12px;
       flex: 1;
@@ -378,7 +400,9 @@
       font-size: .61rem;
       white-space: nowrap;
     }
-    .wa-bubble.user-reply .wa-meta { color: #b8d8d0; }
+    .wa-bubble.user-reply .wa-meta {
+      color: #b8d8d0;
+    }
     .wa-composer {
       background: #202c33;
       padding: 8px 9px;
@@ -411,14 +435,20 @@
       font-size: .95rem;
     }
 
-    /* SMS Simulado */
     .frame-sms {
+
       background: #f4f4f4;
+
       color: #171717;
+
       min-height: 390px;
+
       height: 100%;
+
       display: flex;
+
       flex-direction: column;
+
     }
     .sms-header {
       background: #ffffff;
@@ -453,15 +483,20 @@
       color: #172516;
       align-self: flex-end;
     }
-
-    /* E-mail Simulado */
     .frame-email {
+
       background: #ffffff;
+
       color: #202124;
+
       min-height: 390px;
+
       height: 100%;
+
       display: flex;
+
       flex-direction: column;
+
     }
     .email-toolbar {
       background: #f6f8fc;
@@ -519,15 +554,20 @@
     .technical-headers-panel.active {
       display: block;
     }
-
-    /* Banco / Portal Falso Simulado */
     .frame-bank {
+
       background: #f4f6f9;
+
       color: #333;
+
       height: 100%;
+
       display: flex;
+
       flex-direction: column;
+
       font-family: sans-serif;
+
     }
     .browser-bar {
       background: #222;
@@ -578,14 +618,20 @@
       text-align: left;
     }
 
-    /* Hotspots: clicáveis, mas sem sublinhado ou dica visual antecipada */
     .hotspot {
+
       background: transparent;
+
       border-bottom: none;
+
       cursor: inherit;
+
       padding: 0;
+
       border-radius: 0;
+
       transition: color 0.2s, background 0.2s;
+
     }
     .hotspot:hover {
       background: transparent;
@@ -596,15 +642,20 @@
       color: inherit;
       font-weight: inherit;
     }
-
-    /* Opções de Chat Interativo */
     .chat-options-bar {
+
       display: flex;
+
       gap: 8px;
+
       padding: 8px 12px;
+
       background: rgba(13, 27, 42, 0.9);
+
       border-top: 1px solid var(--border-color);
+
       flex-wrap: wrap;
+
     }
     .chat-opt-btn {
       background: var(--bg-card-alt);
@@ -621,19 +672,19 @@
       border-color: var(--accent-blue);
       color: var(--accent-blue);
     }
-
-    /* Painel de Decisão */
     #decision-panel {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
 
-    /* ==========================================================================
-       5. MODAL DE TOOLTIP DE EXPLICAÇÃO
-       ========================================================================== */
+      display: flex;
+
+      justify-content: space-between;
+
+      align-items: center;
+
+      gap: 10px;
+
+      flex-wrap: wrap;
+
+    }
     .hud-modal-overlay {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -658,9 +709,6 @@
       box-shadow: 0 0 25px rgba(0, 240, 255, 0.3);
     }
 
-    /* ==========================================================================
-       6. OVERLAY MODO CONSEQUÊNCIA (FALHA)
-       ========================================================================== */
     #breach-overlay {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -676,12 +724,14 @@
     #breach-overlay.active {
       display: flex;
     }
-
     @keyframes pulse-border {
-      0% { box-shadow: inset 0 0 15px var(--accent-red); }
-      100% { box-shadow: inset 0 0 35px var(--accent-red); }
+      0% {
+        box-shadow: inset 0 0 15px var(--accent-red);
+      }
+      100% {
+        box-shadow: inset 0 0 35px var(--accent-red);
+      }
     }
-
     .breach-header {
       color: var(--accent-red);
       font-size: 1.35rem;
@@ -694,7 +744,6 @@
       justify-content: center;
       gap: 10px;
     }
-
     .damage-report {
       background: rgba(255, 0, 85, 0.12);
       border: 1px solid var(--accent-red);
@@ -703,7 +752,6 @@
       border-radius: 4px;
       font-size: 0.85rem;
     }
-
     .action-plan {
       background: rgba(0, 240, 255, 0.05);
       border: 1px solid var(--accent-blue);
@@ -711,43 +759,39 @@
       margin-bottom: 15px;
       border-radius: 4px;
     }
-
     .action-plan h4 {
       color: var(--accent-blue);
       margin-bottom: 8px;
       font-size: 0.85rem;
     }
-
     .action-plan ul {
       margin-left: 20px;
       line-height: 1.5;
       font-size: 0.8rem;
     }
-
-    /* ==========================================================================
-       7. TELA FINAL DE RELATÓRIO E RANKING
-       ========================================================================== */
     .report-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
-      margin: 15px 0;
-    }
 
+      display: grid;
+
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+
+      gap: 12px;
+
+      margin: 15px 0;
+
+    }
     .report-card {
       background: var(--bg-card-alt);
       border: 1px solid var(--border-color);
       padding: 12px;
       border-radius: 4px;
     }
-
     .report-card h4 {
       color: var(--accent-blue);
       margin-bottom: 6px;
       font-size: 0.8rem;
       text-transform: uppercase;
     }
-
     .gold-tips {
       background: rgba(0, 255, 102, 0.05);
       border: 1px solid var(--accent-green);
@@ -755,19 +799,16 @@
       margin: 10px 0;
       border-radius: 4px;
     }
-
     .gold-tips h4 {
       color: var(--accent-green);
       margin-bottom: 6px;
       font-size: 0.85rem;
     }
-
     .gold-tips ol {
       margin-left: 18px;
       font-size: 0.8rem;
       line-height: 1.4;
     }
-
     .ranking-table {
       width: 100%;
       border-collapse: collapse;
@@ -783,7 +824,6 @@
       background: var(--bg-card-alt);
       color: var(--accent-blue);
     }
-
     @media (max-width: 600px) {
       #app-container {
         width: 100%;
@@ -806,10 +846,8 @@
 </head>
 <body>
 
-  <!-- CONTAINER PRINCIPAL DA INTERFACE HUD -->
   <div id="app-container">
 
-    <!-- HEADER SUPERIOR DE STATUS -->
     <header id="hud-header">
       <div class="hud-metric">
         <span class="hud-label">Dificuldade</span>
@@ -835,7 +873,7 @@
     <!-- 1. TELA INICIAL -->
     <section id="screen-intro" class="screen active">
       <h1 class="hud-title">CYBER-DETECT: SIMULADOR AVANÇADO DE PHISHING</h1>
-      
+
       <div class="intro-box">
         <h3>
           <svg class="icon" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-5.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8s0 0 0 0z"/></svg>
@@ -844,6 +882,13 @@
         <p>Aprenda a identificar ataques cibernéticos analisando 32 cenários reais e simulados em canais como WhatsApp, SMS, E-mail e Páginas de Login Bancárias. Interaja com os chats, inspecione cabeçalhos técnicos e teste sua atenção!</p>
         <br>
         <p><strong>INSTRUÇÕES:</strong> Clique nos sinais suspeitos (hotspots), interaja com o chat do golpista ou decida se a mensagem é um Golpe ou Legítima.</p>
+      </div>
+
+      <!-- NOME DO JOGADOR -->
+      <div style="width:100%;max-width:720px;">
+        <span class="hud-label" style="display:block;text-align:center;margin-bottom:8px;">DIGITE SEU NOME:</span>
+        <input id="player-name" type="text" maxlength="30" placeholder="Seu nome"
+          style="width:100%;padding:10px;background:var(--bg-card-alt);color:var(--text-main);border:1px solid var(--border-color);font-family:var(--font-mono);text-align:center;">
       </div>
 
       <div style="width: 100%; max-width: 720px;">
@@ -870,21 +915,20 @@
       </button>
     </section>
 
-    <!-- 2. TELA PRINCIPAL DO SIMULADOR (JOGO) -->
+    <!-- 2. TELA PRINCIPAL DO SIMULADOR -->
     <section id="screen-game" class="screen">
-      <div style="display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <button id="btn-home" class="hud-btn" style="padding:5px 12px;font-size:0.75rem;">← VOLTAR AO INÍCIO</button>
         <button id="btn-hint" class="hud-btn hud-btn-warning" style="padding: 5px 12px; font-size: 0.75rem;">
           <svg class="icon" viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
           PEDIR DICA (-50 PTS)
         </button>
       </div>
 
-      <!-- MOLDURA DO APLICATIVO SIMULADO -->
       <div id="app-frame-container">
         <!-- Injetado via JS -->
       </div>
 
-      <!-- BOTOES DE DECISAO -->
       <div id="decision-panel" style="margin-top: 10px;">
         <button id="btn-mark-phishing" class="hud-btn hud-btn-danger">
           <svg class="icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
@@ -902,6 +946,10 @@
       <h1 class="hud-title">RELATÓRIO TÁTICO DE SEGURANÇA</h1>
 
       <div class="report-grid">
+        <div class="report-card">
+          <h4>Jogador</h4>
+          <p id="report-name" style="font-size: 1.05rem; font-weight: bold; color: var(--accent-blue); overflow-wrap:anywhere;">-</p>
+        </div>
         <div class="report-card">
           <h4>Classificação Final</h4>
           <p id="report-rating" style="font-size: 1.05rem; font-weight: bold; color: var(--accent-green);">ESPECIALISTA</p>
@@ -923,7 +971,6 @@
         </ul>
       </div>
 
-      <!-- DICAS DE PROTEÇÃO -->
       <div class="gold-tips">
         <h4>DIRETRIZES DE DEFESA CIBERNÉTICA:</h4>
         <ol>
@@ -934,13 +981,13 @@
         </ol>
       </div>
 
-      <!-- RANKING LOCAL -->
       <div class="report-card">
         <h4>Ranking da Sessão Local</h4>
         <table class="ranking-table">
           <thead>
             <tr>
               <th>#</th>
+              <th>Nome</th>
               <th>Data</th>
               <th>Nível</th>
               <th>Pontos</th>
@@ -948,7 +995,6 @@
             </tr>
           </thead>
           <tbody id="ranking-body">
-            <!-- Preenchido via JS -->
           </tbody>
         </table>
       </div>
@@ -959,7 +1005,6 @@
       </button>
     </section>
 
-    <!-- MODAL DE EXPLICAÇÃO DO HOTSPOT -->
     <div id="modal-explanation" class="hud-modal-overlay">
       <div class="hud-modal-content">
         <h3 style="color: var(--accent-green); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; font-size: 1rem;">
@@ -971,7 +1016,6 @@
       </div>
     </div>
 
-    <!-- OVERLAY MODO CONSEQUÊNCIA (FALHA) -->
     <div id="breach-overlay">
       <div class="breach-header">
         <svg class="icon" style="width: 28px; height: 28px;" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
@@ -986,7 +1030,6 @@
       <div class="action-plan">
         <h4>PLANO DE RECUPERAÇÃO DE EMERGÊNCIA:</h4>
         <ul id="breach-action-list">
-          <!-- Injetado via JS -->
         </ul>
       </div>
 
@@ -997,11 +1040,7 @@
 
   </div>
 
-  <!-- ==========================================================================
-     8. LÓGICA JAVASCRIPT E BANCO DE DADOS DOS 20 CENÁRIOS
-     ========================================================================== -->
   <script>
-    /* BANCO DE DADOS COM 20 CENÁRIOS COMPLETOS */
     const allScenarios = {
       "Fácil": [
         {
@@ -1042,13 +1081,13 @@
           sender: "28400",
           content: `CORREIOS_INFO: Sua encomenda esta retida devido a taxa alfandegaria de R$ 18,90.<br>
           <span class="hotspot" data-id="1">Evite a devolucao do pacote pagando no link:</span><br>
-          <span class="hotspot" data-id="2">http://rastreio-correios-taxa.example/pagar</span>`,
+          <span class="hotspot" data-id="2">http://rastreio-correios-taxa.com/pagar</span>`,
           chatOptions: [
             { label: "Qual o código?", reply: "BR992812SP", response: "Código genérico inventado pelo robô de spam." }
           ],
           hotspots: [
             { id: "1", text: "Falta de acentuação", explanation: "SMS falsos frequentemente ignoram regras gramaticais e acentos." },
-            { id: "2", text: "Link suspeito (.example)", explanation: "Os Correios utilizam exclusivamente o domínio oficial 'correios.com.br'." }
+            { id: "2", text: "Link suspeito (fora de correios.com.br)", explanation: "Os Correios utilizam exclusivamente o domínio oficial 'correios.com.br'." }
           ],
           damageText: "CARTÃO CLONADO! Seus dados de pagamento foram capturados em página falsa.",
           actions: [
@@ -1087,13 +1126,13 @@
           category: "Comunicação Escolar",
           channel: "email",
           isPhishing: false,
-          sender: "secretaria@escola-horizonte.example",
+          sender: "secretaria@escola-horizonte.com",
           subject: "Calendário Acadêmico do Próximo Semestre",
           content: `Prezados alunos,<br><br>
           Informamos que o calendário oficial das avaliações do próximo semestre já está publicado em nosso portal institucional.<br>
           Lembramos que a escola nunca solicita senhas ou dados confidenciais por e-mail.<br><br>
           Atenciosamente,<br>Secretaria da Escola Horizonte.`,
-          technicalHeaders: "Return-Path: <secretaria@escola-horizonte.example>\nSPF: Pass (domain of escola-horizonte.example designates IP 192.0.2.1)\nDKIM: 'OK' with domain escola-horizonte.example",
+          technicalHeaders: "Return-Path: <secretaria@escola-horizonte.com>\nSPF: Pass (domain of escola-horizonte.com designates IP 192.0.2.1)\nDKIM: 'OK' with domain escola-horizonte.com",
           hotspots: [],
           damageText: "FALSO ALARME! Esta mensagem era 100% legítima.",
           actions: ["Mensagens legítimas informam normas sem exigir dados confidenciais."]
@@ -1104,13 +1143,13 @@
           category: "Falso Suporte Netflix",
           channel: "email",
           isPhishing: true,
-          sender: "suporte@netflx-atualizacao.example",
+          sender: "suporte.netflx.atualizacao@gmail.com",
           subject: "PROBLEMA COM SUA ASSINATURA: Pagamento Recusado",
           content: `Olá cliente,<br><br>
           <span class="hotspot" data-id="1">Seu ultimo pagamento foi recusado pelo banco.</span><br>
           Sua conta sera cancelada hoje.<br>
-          <span class="hotspot" data-id="2">Atualize seus dados em: http://netflx-atualiza.example/login</span>`,
-          technicalHeaders: "Return-Path: <bounces@netflx-atualizacao.example>\nSPF: Fail (IP 203.0.113.50 is not authorized)\nDKIM: None",
+          <span class="hotspot" data-id="2">Atualize seus dados em: http://netflx-atualiza.com/login</span>`,
+          technicalHeaders: "Return-Path: <suporte.netflx.atualizacao@gmail.com>\nSPF: Fail (IP 203.0.113.50 is not authorized)\nDKIM: None",
           hotspots: [
             { id: "1", text: "Alerta de pagamento recusado genérico", explanation: "Tentativa de induzir pânico pelo cancelamento do serviço de streaming." },
             { id: "2", text: "Erro de digitação no domínio (netflx)", explanation: "O domínio oficial é 'netflix.com'. Note a ausência da letra 'i'." }
@@ -1127,13 +1166,13 @@
           category: "Fatura de Cartão",
           channel: "email",
           isPhishing: false,
-          sender: "fatura@bancohorizonte.example",
+          sender: "fatura@bancohorizonte.com",
           subject: "Sua Fatura do Cartão Horizonte está Disponível",
           content: `Prezado(a) cliente,<br><br>
           Sua fatura com vencimento para o dia 10 está fechada. O valor total é R$ 1.250,00.<br>
           Você pode visualizar o boleto e os detalhes diretamente no aplicativo oficial do Banco Horizonte.<br><br>
           Banco Horizonte S.A.`,
-          technicalHeaders: "Return-Path: <fatura@bancohorizonte.example>\nSPF: Pass (domain designates IP 198.51.100.10)\nDKIM: 'OK' with domain bancohorizonte.example",
+          technicalHeaders: "Return-Path: <fatura@bancohorizonte.com>\nSPF: Pass (domain designates IP 198.51.100.10)\nDKIM: 'OK' with domain bancohorizonte.com",
           hotspots: [],
           damageText: "FALSO ALARME! E-mail legítimo de fechamento de fatura.",
           actions: ["Bancos legítimos enviam extratos informativos sem links diretos para pagamento externo."]
@@ -1147,7 +1186,7 @@
           sender: "8899",
           content: `PROMO OPERADORA: Voce ganhou 10GB de internet gratis!<br>
           <span class="hotspot" data-id="1">Resgate agora mesmo enviando seus dados cadastrais e senha do app para o link:</span><br>
-          <span class="hotspot" data-id="2">http://recarga-gratis-operadora.example</span>`,
+          <span class="hotspot" data-id="2">http://recarga-gratis-operadora.com</span>`,
           hotspots: [
             { id: "1", text: "Pedido de senha por SMS", explanation: "Nenhuma operadora solicita senhas pessoais por mensagens de texto." },
             { id: "2", text: "Link externo não oficial", explanation: "Promoções reais ocorrem dentro dos aplicativos oficiais das operadoras." }
@@ -1186,9 +1225,9 @@
         },
         {
           id: 23, level: "Fácil", category: "Atualização falsa de aplicativo", channel: "email",
-          isPhishing: true, sender: "atualizacao@app-seguro.example", subject: "Atualização obrigatória",
+          isPhishing: true, sender: "atualizacao.app.seguro@gmail.com", subject: "Atualização obrigatória",
           content: `Olá, usuário.<br><span class="hotspot" data-id="1">Baixe o arquivo anexado para corrigir um problema de segurança.</span><br><span class="hotspot" data-id="2">A instalação deve ser feita imediatamente.</span>`,
-          technicalHeaders:"Return-Path: <download@app-seguro.example>\nSPF: Fail\nDKIM: None",
+          technicalHeaders:"Return-Path: <atualizacao.app.seguro@gmail.com>\nSPF: Fail\nDKIM: None",
           chatOptions:[
             {label:"Baixar o anexo",reply:"Vou instalar agora.",response:"Não é seguro executar anexos inesperados; eles podem conter programas maliciosos."},
             {label:"Abrir a loja oficial",reply:"Vou procurar atualização na loja oficial.",response:"Boa prática: atualize aplicativos pela loja oficial ou pelo próprio programa."},
@@ -1200,9 +1239,9 @@
         },
         {
           id: 24, level: "Fácil", category: "Aviso legítimo de atividade", channel: "email",
-          isPhishing: false, sender: "alertas@conta.exemplo.gov.br", subject: "Novo acesso registrado",
+          isPhishing: false, sender: "alertas@conta.gov.br", subject: "Novo acesso registrado",
           content: `Olá!<br>Foi registrado um acesso à sua conta em um novo dispositivo.<br>Se reconhece a atividade, nenhuma ação é necessária.<br>Se não reconhece, abra o aplicativo oficial digitando o endereço conhecido no navegador.`,
-          technicalHeaders:"Return-Path: <alertas@conta.exemplo.gov.br>\nSPF: Pass\nDKIM: OK",
+          technicalHeaders:"Return-Path: <alertas@conta.gov.br>\nSPF: Pass\nDKIM: OK",
           hotspots:[], damageText:"FALSO ALARME! A mensagem orienta a verificar a conta por um canal oficial.",
           actions:["Mesmo em alertas legítimos, confira o endereço do remetente.","Se houver dúvida, abra o aplicativo oficial por conta própria."]
         }
@@ -1214,10 +1253,10 @@
           category: "Falso Suporte de Banco",
           channel: "bank",
           isPhishing: true,
-          sender: "http://bancohorizonte-seguranca.example/login",
+          sender: "http://bancohorizonte-seguranca.com/login",
           content: `Portal de Segurança Banco Horizonte`,
           hotspots: [
-            { id: "1", text: "URL suspeita (bancohorizonte-seguranca.example)", explanation: "O domínio oficial do banco é 'bancohorizonte.com'. Termos como 'seguranca' no domínio indicam phishing." },
+            { id: "1", text: "URL suspeita (bancohorizonte-seguranca.com)", explanation: "O domínio oficial do banco é 'bancohorizonte.com'. Termos como 'seguranca' no domínio indicam phishing." },
             { id: "2", text: "Protocolo HTTP inseguro", explanation: "Páginas de login bancário exigem HTTPS com certificado digital válido." },
             { id: "3", text: "Solicitação de Token e Senha Completa", explanation: "Bancos nunca exigem senha de 8 dígitos combinada com token completo em formulário web." }
           ],
@@ -1234,13 +1273,13 @@
           category: "Boleto Falso",
           channel: "email",
           isPhishing: true,
-          sender: "cobranca@condominio-horizonte-atualizado.example",
+          sender: "cobranca.condominio.horizonte.atualizado@gmail.com",
           subject: "URGENTE: Segunda via boleto condomínio com vencimento hoje",
           content: `Prezado condômino,<br><br>
           <span class="hotspot" data-id="1">Identificamos alteração no código de barras do seu boleto de condomínio deste mês.</span><br>
           Utilize obrigatoriamente o novo arquivo em anexo para evitar multa.<br>
-          <span class="hotspot" data-id="2">Link do Boleto: http://condominio-horizonte-atualizado.example/boleto.pdf.exe</span>`,
-          technicalHeaders: "Return-Path: <bounce@condominio-horizonte-atualizado.example>\nSPF: SoftFail\nDKIM: Fail",
+          <span class="hotspot" data-id="2">Link do Boleto: http://condominio-horizonte-atualizado.com/boleto.pdf.exe</span>`,
+          technicalHeaders: "Return-Path: <cobranca.condominio.horizonte.atualizado@gmail.com>\nSPF: SoftFail\nDKIM: Fail",
           hotspots: [
             { id: "1", text: "Alerta de alteração de boleto por e-mail", explanation: "Boletos reais não mudam de código de barras repentinamente por aviso de e-mail." },
             { id: "2", text: "Extensão dupla perigosa (.pdf.exe)", explanation: "O arquivo finge ser PDF mas é um executável malicioso (.exe)." }
@@ -1258,14 +1297,14 @@
           category: "Alerta de Login Real",
           channel: "email",
           isPhishing: false,
-          sender: "no-reply@notificacoes.escola-horizonte.example",
+          sender: "no-reply@notificacoes.escola-horizonte.com",
           subject: "Alerta de Novo Acesso à sua Conta",
           content: `Olá,<br><br>
           Identificamos um novo acesso ao seu portal acadêmico a partir de um dispositivo móvel em São Paulo - SP.<br>
           Se você reconhece esta atividade, nenhuma ação é necessária.<br>
           Caso contrário, altere sua senha imediatamente no painel oficial.<br><br>
           Equipe de Segurança - Escola Horizonte.`,
-          technicalHeaders: "Return-Path: <no-reply@notificacoes.escola-horizonte.example>\nSPF: Pass\nDKIM: 'OK' with domain escola-horizonte.example",
+          technicalHeaders: "Return-Path: <no-reply@notificacoes.escola-horizonte.com>\nSPF: Pass\nDKIM: 'OK' with domain escola-horizonte.com",
           hotspots: [],
           damageText: "FALSO ALARME! Mensagem legítima de notificação de segurança.",
           actions: ["Alertas legítimos fornecem instruções claras para alteração de senha no portal oficial."]
@@ -1301,7 +1340,7 @@
           sender: "BANCO-HORIZ",
           content: `BANCO HORIZONTE: Sua chave Pix foi cadastrada em outro dispositivo (IP: 192.168.1.50).<br>
           <span class="hotspot" data-id="1">Se nao foi voce, cancele a operacao imediatamente em:</span><br>
-          <span class="hotspot" data-id="2">http://bancohorizonte-cancelamento.example</span>`,
+          <span class="hotspot" data-id="2">http://bancohorizonte-cancelamento.com</span>`,
           hotspots: [
             { id: "1", text: "Alerta de segurança alarmante", explanation: "Uso de termos técnicos falsos para gerar pânico e levar ao clique rápido." },
             { id: "2", text: "Link externo em SMS", explanation: "Bancos nunca enviam links diretos para cancelamento de chaves Pix por SMS." }
@@ -1331,13 +1370,13 @@
           category: "Vazamento de Dados Corporativos (Spear Phishing)",
           channel: "email",
           isPhishing: true,
-          sender: "diretoria@escola-horizonte-corp.example",
+          sender: "diretoria.escola.horizonte.corp@gmail.com",
           subject: "Confidencial: Nova política de remuneração e bônus",
           content: `Prezado colaborador,<br><br>
           <span class="hotspot" data-id="1">A diretoria aprovou um reajuste salarial extraordinário.</span><br>
           Confirme sua participação fazendo login na planilha interna:<br>
-          <span class="hotspot" data-id="2">http://intranet-horizonte-login.example/auth</span>`,
-          technicalHeaders: "Return-Path: <admin@escola-horizonte-corp.example>\nSPF: Fail\nDKIM: None",
+          <span class="hotspot" data-id="2">http://intranet-horizonte-login.com/auth</span>`,
+          technicalHeaders: "Return-Path: <diretoria.escola.horizonte.corp@gmail.com>\nSPF: Fail\nDKIM: None",
           hotspots: [
             { id: "1", text: "Promessa de reajuste salarial individual", explanation: "Técnica de spear phishing focada em despertar curiosidade e ganância profissional." },
             { id: "2", text: "Link externo simulando intranet", explanation: "O link aponta para um domínio externo controlado por hackers para roubar senhas corporativas." }
@@ -1350,9 +1389,9 @@
         },
         {
           id: 25, level: "Médio", category: "Falso aviso de armazenamento", channel: "email",
-          isPhishing: true, sender: "nuvem-alerta@storage-renova.example", subject: "Seus arquivos serão apagados",
+          isPhishing: true, sender: "nuvem.alerta.storage.renova@gmail.com", subject: "Seus arquivos serão apagados",
           content: `Seu armazenamento está cheio.<br><span class="hotspot" data-id="1">Clique para ampliar sua capacidade gratuitamente.</span><br><span class="hotspot" data-id="2">Entre com seu e-mail e senha para evitar a exclusão dos arquivos.</span>`,
-          technicalHeaders:"Return-Path: <mailer@storage-renova.example>\nSPF: Fail\nDKIM: Fail",
+          technicalHeaders:"Return-Path: <nuvem.alerta.storage.renova@gmail.com>\nSPF: Fail\nDKIM: Fail",
           chatOptions:[
             {label:"Entrar pelo link",reply:"Vou acessar agora.",response:"A página pode capturar suas credenciais. Não use links inesperados para entrar na conta."},
             {label:"Verificar no aplicativo oficial",reply:"Vou conferir o armazenamento no app.",response:"Correto! Confira o espaço disponível no aplicativo ou site oficial."},
@@ -1364,9 +1403,9 @@
         },
         {
           id: 26, level: "Médio", category: "Convite falso para documento compartilhado", channel: "email",
-          isPhishing: true, sender: "compartilhamento@docs-equipe.example", subject: "Documento compartilhado com você",
+          isPhishing: true, sender: "compartilhamento.docs.equipe@gmail.com", subject: "Documento compartilhado com você",
           content: `Um colega compartilhou um documento.<br><span class="hotspot" data-id="1">O link solicita login em uma página externa.</span><br><span class="hotspot" data-id="2">O remetente tem um endereço diferente do usado pela equipe.</span>`,
-          technicalHeaders:"Return-Path: <notice@docs-equipe.example>\nSPF: SoftFail\nDKIM: None",
+          technicalHeaders:"Return-Path: <compartilhamento.docs.equipe@gmail.com>\nSPF: SoftFail\nDKIM: None",
           chatOptions:[
             {label:"Fazer login pelo link",reply:"Vou abrir o documento.",response:"Cuidado: uma página de login externa pode imitar o serviço verdadeiro."},
             {label:"Confirmar com o colega",reply:"Vou perguntar por outro canal.",response:"Excelente! Confirme com a pessoa por um canal conhecido antes de abrir o documento."},
@@ -1404,14 +1443,14 @@
           category: "CEO Fraud / Business Email Compromise",
           channel: "email",
           isPhishing: true,
-          sender: "c.silva.diretor@bancohorizonte-executivo.example",
+          sender: "c.silva.diretor.bancohorizonte.executivo@gmail.com",
           subject: "Urgente: Transferência sigilosa para aquisição estratégica",
           content: `Olá,<br><br>
           Estou em reunião com o conselho e preciso que você realize uma transferência via TED no valor de R$ 45.000,00 para o fornecedor parceiro.<br>
           <span class="hotspot" data-id="1">Trata-se de operação sigilosa de aquisição. Não comente com outros gerentes até o fechamento.</span><br>
           Dados da conta em anexo.<br><br>
           Carlos Silva<br>Diretor Executivo`,
-          technicalHeaders: "Return-Path: <reply@bancohorizonte-executivo.example>\nSPF: Fail (IP 198.51.100.99)\nDKIM: Fail",
+          technicalHeaders: "Return-Path: <c.silva.diretor.bancohorizonte.executivo@gmail.com>\nSPF: Fail (IP 198.51.100.99)\nDKIM: Fail",
           hotspots: [
             { id: "1", text: "Pedido de sigilo e urgência do Diretor", explanation: "CEO Fraud: golpistas se passam por diretores para burlar processos normais de aprovação financeira usando pressão hierárquica." }
           ],
@@ -1427,16 +1466,16 @@
           category: "Falso Leilão de Veículos",
           channel: "email",
           isPhishing: true,
-          sender: "contato@detran-sp-leiloes-oficial.example",
+          sender: "contato.detran.sp.leiloes.oficial@gmail.com",
           subject: "Arremate em Leilão: Veículo quitado com 70% de desconto",
           content: `Prezado cidadão,<br><br>
           Você foi habilitado para participar do Grande Leilão Online do Detran.<br>
           <span class="hotspot" data-id="1">Para garantir o lote arrematado, efetue o depósito de caução via Pix em até 2 horas.</span><br>
-          Acesse o portal homologado: <span class="hotspot" data-id="2">http://detran-sp-leiloes.example</span>`,
-          technicalHeaders: "Return-Path: <admin@detran-sp-leiloes.example>\nSPF: Neutral\nDKIM: None",
+          Acesse o portal homologado: <span class="hotspot" data-id="2">http://detran-sp-leiloes.com</span>`,
+          technicalHeaders: "Return-Path: <contato.detran.sp.leiloes.oficial@gmail.com>\nSPF: Neutral\nDKIM: None",
           hotspots: [
             { id: "1", text: "Exigência de caução rápida via Pix", explanation: "Leilões oficiais do governo exigem pagamento de taxas via DAE (Documento de Arrecadação Estadual), nunca Pix para contas de pessoas físicas." },
-            { id: "2", text: "Domínio falso (.example)", explanation: "Órgãos governamentais utilizam exclusivamente a extensão oficial '.gov.br'." }
+            { id: "2", text: "Domínio falso (não é .gov.br)", explanation: "Órgãos governamentais utilizam exclusivamente a extensão oficial '.gov.br'." }
           ],
           damageText: "GOLPE DO LEILÃO FALSO! Você perdeu o valor da caução e o veículo nunca existiu.",
           actions: [
@@ -1453,7 +1492,7 @@
           sender: "SEG-BANCO",
           content: `BANCO HORIZONTE: Certificado de Seguranca do seu Token expirou.<br>
           <span class="hotspot" data-id="1">Sua conta sera bloqueada preventivamente se nao atualizar o dispositivo fisico/digital agora:</span><br>
-          <span class="hotspot" data-id="2">http://bancohorizonte-token-atualiza.example</span>`,
+          <span class="hotspot" data-id="2">http://bancohorizonte-token-atualiza.com</span>`,
           hotspots: [
             { id: "1", text: "Ameaça de bloqueio preventivo", explanation: "Tática de coerção psicológica para forçar a vítima a agir sem pensar." },
             { id: "2", text: "Link de atualização de token por SMS", explanation: "Tokens de segurança nunca são atualizados por links externos enviados por SMS." }
@@ -1494,7 +1533,7 @@
           <span class="hotspot" data-id="1">Garantimos rentabilidade fixa de 15% ao dia em operações automatizadas.</span><br>
           <span class="hotspot" data-id="2">Faça seu primeiro depósito via Pix na carteira oficial da plataforma.</span>`,
           chatOptions: [
-            { label: "Tem garantia?", reply: "15% ao dia garantido em contrato!", response: "Promessas de lucro garantido e absurdo são indícios inequip必备 de esquema de pirâmide/golpe." }
+            { label: "Tem garantia?", reply: "15% ao dia garantido em contrato!", response: "Promessas de lucro garantido e absurdo são indícios inequívocos de esquema de pirâmide/golpe." }
           ],
           hotspots: [
             { id: "1", text: "Promessa de rentabilidade irreal (15% ao dia)", explanation: "Nenhum investimento legalizado no mundo garante lucros fixos diários dessa magnitude." },
@@ -1532,9 +1571,9 @@
         },
         {
           id: 29, level: "Difícil", category: "Falso pedido de redefinição de senha", channel: "email",
-          isPhishing: true, sender: "security@conta-verificacao.example", subject: "Solicitação de redefinição detectada",
+          isPhishing: true, sender: "security.conta.verificacao@gmail.com", subject: "Solicitação de redefinição detectada",
           content: `Recebemos um pedido de redefinição de senha.<br><span class="hotspot" data-id="1">Se não foi você, acesse imediatamente o painel de proteção.</span><br><span class="hotspot" data-id="2">A página solicita senha atual e código de autenticação.</span>`,
-          technicalHeaders:"Return-Path: <security@conta-verificacao.example>\nSPF: Fail\nDKIM: None",
+          technicalHeaders:"Return-Path: <security.conta.verificacao@gmail.com>\nSPF: Fail\nDKIM: None",
           chatOptions:[
             {label:"Abrir o painel do e-mail",reply:"Vou verificar minha conta diretamente.",response:"Boa escolha: entre pelo aplicativo ou endereço oficial, sem usar o link recebido."},
             {label:"Preencher os dados no link",reply:"Vou confirmar minha senha e código.",response:"Isso pode entregar tanto a senha quanto o segundo fator a um invasor."},
@@ -1546,9 +1585,9 @@
         },
         {
           id: 30, level: "Difícil", category: "Falso contato de fornecedor", channel: "email",
-          isPhishing: true, sender: "financeiro@fornecedor-horizonte.example", subject: "Atualização bancária para próxima fatura",
+          isPhishing: true, sender: "financeiro.fornecedor.horizonte@gmail.com", subject: "Atualização bancária para próxima fatura",
           content: `Prezada equipe,<br>Por uma mudança administrativa, os próximos pagamentos devem ser enviados para uma nova conta.<br><span class="hotspot" data-id="1">Desconsidere os dados bancários anteriores.</span><br><span class="hotspot" data-id="2">A alteração deve permanecer confidencial até o fechamento.</span>`,
-          technicalHeaders:"Return-Path: <financeiro@fornecedor-horizonte.example>\nSPF: SoftFail\nDKIM: Fail",
+          technicalHeaders:"Return-Path: <financeiro.fornecedor.horizonte@gmail.com>\nSPF: SoftFail\nDKIM: Fail",
           chatOptions:[
             {label:"Atualizar cadastro imediatamente",reply:"Vamos alterar os dados.",response:"Uma mudança inesperada pode desviar pagamentos para criminosos."},
             {label:"Confirmar com contato já cadastrado",reply:"Ligarei para o número conhecido do fornecedor.",response:"Excelente! Confirme alterações financeiras por um canal previamente verificado."},
@@ -1573,9 +1612,9 @@
         },
         {
           id: 32, level: "Difícil", category: "Convite corporativo legítimo", channel: "email",
-          isPhishing: false, sender: "reunioes@empresa.exemplo.br", subject: "Convite para reunião de equipe",
+          isPhishing: false, sender: "reunioes@empresa.com.br", subject: "Convite para reunião de equipe",
           content: `Olá, equipe.<br>Você foi convidado para a reunião semanal de acompanhamento.<br>O convite inclui data, horário, pauta e organizador identificável.<br>Para consultar os detalhes, abra o calendário corporativo pelo aplicativo habitual.`,
-          technicalHeaders:"Return-Path: <reunioes@empresa.exemplo.br>\nSPF: Pass\nDKIM: OK",
+          technicalHeaders:"Return-Path: <reunioes@empresa.com.br>\nSPF: Pass\nDKIM: OK",
           hotspots:[], damageText:"FALSO ALARME! O convite orienta a consultar o calendário corporativo habitual.",
           actions:["Confira se o organizador e o evento são reconhecidos.","Mesmo em mensagens aparentemente legítimas, evite fornecer senhas por links inesperados."]
         }
@@ -1594,6 +1633,7 @@
     let currentScenarioData = null;
     let sessionHistory = [];
     let categoryErrors = {};
+    let playerName = "";
 
     /* ELEMENTOS DOM */
     const screenIntro = document.getElementById("screen-intro");
@@ -1637,18 +1677,29 @@
 
     /* INICIALIZAÇÃO DO JOGO */
     btnStart.addEventListener("click", () => {
+      const nameInput = document.getElementById("player-name");
+      playerName = nameInput.value.trim();
+      if (!playerName) {
+        nameInput.focus();
+        nameInput.style.borderColor = "var(--accent-red)";
+        nameInput.placeholder = "Digite seu nome para começar";
+        return;
+      }
+      nameInput.style.borderColor = "var(--border-color)";
+
       activeScenariosList = allScenarios[currentDifficulty];
       currentScenarioIndex = 0;
       score = 0;
+      updateHudScore();
       secondsElapsed = 0;
       categoryErrors = {};
-      
+
       screenIntro.classList.remove("active");
       screenReport.classList.remove("active");
       screenGame.classList.add("active");
 
       hudLevel.innerText = currentDifficulty.toUpperCase();
-      
+
       startTimer();
       loadScenario();
     });
@@ -1682,7 +1733,7 @@
       renderAppFrame();
     }
 
-    /* Avatares locais gerados em SVG: funcionam sem internet e variam por contato. */
+    /* Avatares locais gerados em SVG (usados no SMS/e-mail e como reserva no WhatsApp). */
     function avatarData(label, channel) {
       const palettes = channel === "whatsapp" ? ["#075e54", "#4776a8", "#8b5e83", "#6c7d47"] :
                        channel === "sms" ? ["#4267a9", "#607d8b", "#8d6e63", "#6d7194"] :
@@ -1692,6 +1743,37 @@
       const bg = palettes[hash % palettes.length];
       const initials = (str.replace(/[^A-Za-zÀ-ÿ0-9 ]/g, " ").trim().split(/\s+/).slice(0,2).map(x=>x[0]||"").join("") || "?").toUpperCase();
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="48" fill="${bg}"/><circle cx="48" cy="35" r="17" fill="#f0f2f3" opacity=".95"/><path d="M16 88c2-21 15-32 32-32s30 11 32 32" fill="#f0f2f3" opacity=".95"/><text x="48" y="91" text-anchor="middle" font-family="Arial" font-size="1" fill="white">${initials}</text></svg>`;
+      return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+    }
+
+    /* Fotos de perfil ilustradas, incorporadas ao HTML e disponíveis offline. */
+    function photoAvatar(id) {
+      const colors = [
+        ["#397b89", "#f3c9a5", "#342b35"],
+        ["#996a85", "#dca780", "#302a2b"],
+        ["#577c64", "#a97153", "#191e28"],
+        ["#76649b", "#e2b89b", "#5c382d"],
+        ["#b07c4e", "#bd896d", "#252b38"]
+      ];
+      const [background, skin, hair] = colors[id % colors.length];
+      const hairstyle = id % 3;
+      const hairShape = hairstyle === 0
+        ? `<path d="M25 47Q19 12 49 15Q78 12 73 49L67 34Q46 21 30 40Z" fill="${hair}"/>`
+        : hairstyle === 1
+          ? `<path d="M24 45Q16 13 48 15Q79 12 73 46Q61 28 45 33Q32 32 24 45Z" fill="${hair}"/>`
+          : `<path d="M23 43Q20 13 49 16Q77 13 74 44L65 31Q43 27 29 41Z" fill="${hair}"/>`;
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 100 100">
+          <rect width="100" height="100" fill="${background}"/>
+          <circle cx="78" cy="18" r="31" fill="#ffffff" opacity=".10"/>
+          <path d="M7 100Q10 69 37 65L50 75L63 65Q90 69 93 100" fill="#243746"/>
+          <path d="M42 61H58V76Q50 83 42 76Z" fill="${skin}"/>
+          <ellipse cx="50" cy="43" rx="23" ry="28" fill="${skin}"/>
+          ${hairShape}
+          <circle cx="41" cy="46" r="2" fill="#28252a"/>
+          <circle cx="59" cy="46" r="2" fill="#28252a"/>
+          <path d="M44 59Q50 63 56 59" stroke="#8c594f" stroke-width="2" fill="none" stroke-linecap="round"/>
+        </svg>`;
       return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
     }
 
@@ -1721,7 +1803,6 @@
     function buildThreadChoices() {
       const data = currentScenarioData;
       const existing = data.chatOptions || [];
-      // Reaproveita respostas específicas do cenário quando disponíveis, mas transforma-as em escolhas dentro da conversa.
       const normalized = existing.slice(0, 2).map((o) => {
         const combined = `${o.label} ${o.reply}`;
         const branch = /vou fazer|pagar|clicar|abrir o link|enviar o código|enviar meus dados|manda o comprovante|pague o frete|entrar agora/i.test(combined)
@@ -1771,7 +1852,6 @@
           if (panel.dataset.used === "yes") return;
           panel.dataset.used = "yes";
           const chosen = choices[Number(button.dataset.senderChoice)];
-          // A mensagem escolhida pelo jogador aparece à direita; a resposta do contato aparece à esquerda.
           appendThreadBubble(channel, chosen.reply, true);
           let senderReply = "";
           if (data.isPhishing) {
@@ -1826,7 +1906,7 @@
       });
     }
 
-    /* RENDERIZAÇÃO DA MOLDURA DO APLICATIVO (WHATSAPP, SMS, EMAIL, BANCO) */
+    /* RENDERIZAÇÃO DA MOLDURA DO APLICATIVO */
     function renderAppFrame() {
       appFrameContainer.innerHTML = "";
 
@@ -1836,7 +1916,7 @@
             <div class="wa-appbar"><span>13:47</span><span>▮▮▮ &nbsp; Wi-Fi &nbsp; ▰</span></div>
             <div class="wa-header">
               <div class="wa-back">‹</div>
-              <img class="wa-avatar" alt="Foto do contato" src="${avatarData(currentScenarioData.avatarText || currentScenarioData.sender, 'whatsapp')}">
+              <img class="wa-avatar" alt="Foto do contato" src="${photoAvatar(currentScenarioData.id)}">
               <div style="flex:1;min-width:0;">
                 <div style="font-weight:600;font-size:.92rem;overflow-wrap:anywhere;">${currentScenarioData.sender}</div>
                 <div style="font-size:.72rem;color:#aebac1;margin-top:3px;">online</div>
@@ -1852,7 +1932,7 @@
             <div class="wa-composer"><span style="font-size:1.25rem;">☺</span><div class="wa-compose-field">Mensagem</div><span style="font-size:1.15rem;">📎</span><span style="font-size:1.05rem;">▣</span><div class="wa-mic">🎙</div></div>
           </div>
         `;
-      } 
+      }
       else if (currentScenarioData.channel === "sms") {
         appFrameContainer.innerHTML = `
           <div class="frame-sms">
@@ -1864,7 +1944,7 @@
             <div id="thread-choice-panel" class="thread-choice-panel" style="background:#fff;border-top:1px solid #ddd;"></div>
           </div>
         `;
-      } 
+      }
       else if (currentScenarioData.channel === "email") {
         appFrameContainer.innerHTML = `
           <div class="frame-email">
@@ -1889,7 +1969,7 @@
         document.getElementById("btn-toggle-headers").addEventListener("click", () => {
           document.getElementById("tech-headers-box").classList.toggle("active");
         });
-      } 
+      }
       else if (currentScenarioData.channel === "bank") {
         appFrameContainer.innerHTML = `
           <div class="frame-bank">
@@ -1911,7 +1991,6 @@
             </div>
           </div>
         `;
-        // Simulação interativa de digitação disparando alerta de navegador falso
         const triggerWarning = () => {
           document.getElementById("fake-browser-warning").style.display = "block";
         };
@@ -1919,7 +1998,6 @@
         document.getElementById("bank-pass-input").addEventListener("input", triggerWarning);
       }
 
-      /* Respostas interativas ligadas à mensagem, sem painel genérico de análise. */
       if (["whatsapp", "sms", "email"].includes(currentScenarioData.channel)) {
         if (currentScenarioData.channel === "email") {
           const panel = document.getElementById("thread-choice-panel");
@@ -1961,8 +2039,6 @@
       });
     }
 
-    /* As mensagens de WhatsApp e SMS são exibidas como uma sequência contextual, sem escolhas de análise artificiais. */
-
     function updateHudScore() {
       hudScore.innerText = `${score} PTS`;
     }
@@ -1990,24 +2066,19 @@
       let isActuallyPhishing = currentScenarioData.isPhishing;
 
       if (userChosePhishing === isActuallyPhishing) {
-        // Acertou
         score += 100;
         updateHudScore();
         nextScenario();
       } else {
-        // Errou
         score = Math.max(0, score - 50);
         updateHudScore();
-        
-        // Registrar erro por categoria
+
         let cat = currentScenarioData.category;
         categoryErrors[cat] = (categoryErrors[cat] || 0) + 1;
 
         if (isActuallyPhishing) {
-          // Caiu no golpe -> Modo Consequência
           showBreachOverlay();
         } else {
-          // Era legítima mas marcou como golpe
           alert("Atenção: Esta comunicação era legítima! Você recusou uma comunicação oficial.");
           nextScenario();
         }
@@ -2061,14 +2132,14 @@
       screenGame.classList.remove("active");
       screenReport.classList.add("active");
 
+      document.getElementById("report-name").innerText = playerName;
       document.getElementById("report-score").innerText = `${score} PTS`;
-      
+
       let rating = "ESPECIALISTA EM CIBERSEGURANÇA";
       if (score < 300) rating = "VULNERÁVEL A AMEAÇAS";
       else if (score < 700) rating = "ANALISTA EM TREINAMENTO";
       document.getElementById("report-rating").innerText = rating;
 
-      // Maior vulnerabilidade
       let maxCat = "Nenhuma detectada";
       let maxErr = 0;
       for (let cat in categoryErrors) {
@@ -2079,7 +2150,6 @@
       }
       document.getElementById("report-weakness").innerText = maxCat;
 
-      // Salvar no Ranking Local
       saveRanking(score, rating);
       renderRanking();
     }
@@ -2087,28 +2157,31 @@
     function saveRanking(finalScore, rating) {
       let ranking = JSON.parse(localStorage.getItem("cyber_detect_ranking") || "[]");
       ranking.push({
+        name: playerName,
         date: new Date().toLocaleDateString("pt-BR"),
         level: currentDifficulty,
         score: finalScore,
         status: rating
       });
       ranking.sort((a, b) => b.score - a.score);
-      ranking = ranking.slice(0, 5); // Top 5
+      ranking = ranking.slice(0, 5);
       localStorage.setItem("cyber_detect_ranking", JSON.stringify(ranking));
     }
 
     function renderRanking() {
+      const safe = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
       let ranking = JSON.parse(localStorage.getItem("cyber_detect_ranking") || "[]");
       let tbody = document.getElementById("ranking-body");
       tbody.innerHTML = "";
       if (ranking.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Nenhum registro anterior.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Nenhum registro anterior.</td></tr>`;
         return;
       }
       ranking.forEach((item, index) => {
         let tr = document.createElement("tr");
         tr.innerHTML = `
           <td>#${index + 1}</td>
+          <td>${safe(item.name || "-")}</td>
           <td>${item.date}</td>
           <td>${item.level}</td>
           <td>${item.score} PTS</td>
@@ -2118,10 +2191,37 @@
       });
     }
 
-    btnRestart.addEventListener("click", () => {
+    /* Retorna à tela inicial, interrompe o tempo e reinicia a interface. */
+    function voltarAoInicio() {
+      clearInterval(timerInterval);
+      modalExplanation.classList.remove("active");
+      breachOverlay.classList.remove("active");
+      screenGame.classList.remove("active");
       screenReport.classList.remove("active");
       screenIntro.classList.add("active");
-    });
+
+      currentScenarioIndex = 0;
+      currentScenarioData = null;
+      activeScenariosList = [];
+      sessionHistory = [];
+      categoryErrors = {};
+      secondsElapsed = 0;
+      score = 0;
+
+      foundHotspotsCount = 0;
+      totalHotspotsInScenario = 0;
+      updateHudScore();
+      hudTimer.innerText = "00:00";
+      hudProgressText.innerText = `0 / ${allScenarios[currentDifficulty].length}`;
+      hudProgressFill.style.width = "0%";
+      appFrameContainer.innerHTML = "";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // Volta ao menu e zera pontuação, tempo e questões.
+    document.getElementById("btn-home").addEventListener("click", voltarAoInicio);
+
+    btnRestart.addEventListener("click", voltarAoInicio);
   </script>
 </body>
 </html>
